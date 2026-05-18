@@ -1,9 +1,11 @@
-export type StickerPosition = 'topRight' | 'topLeft' | 'bottomRight' | 'bottomLeft' | 'center'
+export type StickerPosition = 'topRight' | 'topLeft'
 
 export type Photo = {
   id: string
   image: string
+  imagePath?: string
   stickerImage?: string
+  stickerPath?: string
   stickerPosition?: StickerPosition
   isFavorite: boolean
   description: string

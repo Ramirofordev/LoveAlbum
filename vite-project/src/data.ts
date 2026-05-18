@@ -57,9 +57,6 @@ export const statusLabels: Record<DatePlanStatus, string> = {
 export const stickerPositionLabels: Record<StickerPosition, string> = {
   topRight: 'Arriba derecha',
   topLeft: 'Arriba izquierda',
-  bottomRight: 'Abajo derecha',
-  bottomLeft: 'Abajo izquierda',
-  center: 'Centro',
 }
 
 export const photoFilterLabels = {

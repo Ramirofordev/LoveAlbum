@@ -7,9 +7,6 @@ import type { Photo, PhotoFormState, StickerPosition } from '../types'
 const stickerPositionClasses: Record<StickerPosition, string> = {
   topRight: styles.stickerTopRight,
   topLeft: styles.stickerTopLeft,
-  bottomRight: styles.stickerBottomRight,
-  bottomLeft: styles.stickerBottomLeft,
-  center: styles.stickerCenter,
 }
 
 type PhotoCardProps = {

@@ -1,11 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
+import type { User } from '@supabase/supabase-js'
 import styles from './App.module.css'
 import { AlbumView } from './components/AlbumView'
 import { Dashboard } from './components/Dashboard'
 import { DatePlanner } from './components/DatePlanner'
 import { LoginScreen } from './components/LoginScreen'
 import { initialPhotos, initialPlans } from './data'
+import { supabase } from './lib/supabase'
+import {
+  createPhoto,
+  createPlan,
+  deletePhoto,
+  deletePlan,
+  fetchPhotos,
+  fetchPlans,
+  updatePhoto,
+  updatePlan,
+} from './services/loveAlbumService'
 import type { ActiveView, DatePlan, DatePlanStatus, Photo, PhotoFilter, PhotoFormState, PlanFilter, PlanFormState, ThemeMode } from './types'
 import {
   createId,
@@ -38,8 +50,24 @@ const defaultPlanForm: PlanFormState = {
   activities: '',
 }
 
+const getAuthErrorMessage = (message: string) => {
+  if (message === 'Invalid login credentials') {
+    return 'No encontramos esa cuenta o la contraseña no coincide. Si todavía no la creaste, usá “Crear cuenta”.'
+  }
+
+  if (message.toLowerCase().includes('email not confirmed')) {
+    return 'La cuenta existe, pero falta confirmar el email antes de entrar.'
+  }
+
+  return message
+}
+
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
+  const [isAuthLoading, setIsAuthLoading] = useState(Boolean(supabase))
+  const [authError, setAuthError] = useState('')
+  const [authMessage, setAuthMessage] = useState('')
+  const [dataError, setDataError] = useState('')
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => readStoredTheme('light'))
   const [activeView, setActiveView] = useState<ActiveView>('inicio')
   const [isPhotoFormOpen, setIsPhotoFormOpen] = useState(false)
@@ -52,6 +80,8 @@ function App() {
   const [photoPreview, setPhotoPreview] = useState('')
   const [stickerPreview, setStickerPreview] = useState('')
   const [planForm, setPlanForm] = useState<PlanFormState>(defaultPlanForm)
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [stickerFile, setStickerFile] = useState<File | null>(null)
   const [photoError, setPhotoError] = useState('')
   const [stickerError, setStickerError] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -60,6 +90,35 @@ function App() {
   useEffect(() => writeStoredValue('loveAlbum.photos', photos), [photos])
   useEffect(() => writeStoredValue('loveAlbum.plans', plans), [plans])
   useEffect(() => writeStoredValue('loveAlbum.themeMode', themeMode), [themeMode])
+
+  useEffect(() => {
+    if (!supabase) return
+
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user ?? null)
+      setIsAuthLoading(false)
+    })
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => listener.subscription.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    if (!supabase || !user) return
+
+    Promise.all([fetchPhotos(), fetchPlans()])
+      .then(([remotePhotos, remotePlans]) => {
+        setPhotos(remotePhotos)
+        setPlans(remotePlans)
+        setDataError('')
+      })
+      .catch((error) => {
+        setDataError(error instanceof Error ? error.message : 'No se pudieron cargar los datos de Supabase.')
+      })
+  }, [user])
 
   const groupedPlaces = useMemo(() => Array.from(new Set(photos.map((photo) => photo.place))).join(' · '), [photos])
 
@@ -95,9 +154,39 @@ function App() {
     [planFilter, plans],
   )
 
-  const handleLogin = (event: FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setIsAuthenticated(true)
+    if (!supabase) {
+      setAuthError('Supabase no está configurado. Revisá las variables VITE_SUPABASE_URL y VITE_SUPABASE_PUBLISHABLE_KEY.')
+      return
+    }
+
+    const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null
+    const formData = new FormData(event.currentTarget)
+    const email = String(formData.get('email') ?? '')
+    const password = String(formData.get('password') ?? '')
+    const intent = submitter?.value === 'signup' ? 'signup' : 'login'
+
+    setIsAuthLoading(true)
+    setAuthError('')
+    setAuthMessage('')
+
+    const { data, error } =
+      intent === 'signup'
+        ? await supabase.auth.signUp({ email, password })
+        : await supabase.auth.signInWithPassword({ email, password })
+
+    if (error) {
+      setAuthError(getAuthErrorMessage(error.message))
+      setIsAuthLoading(false)
+      return
+    }
+
+    setUser(data.user ?? null)
+    if (intent === 'signup' && !data.session) {
+      setAuthMessage('Cuenta creada. Si Supabase pide confirmación, abrí el email antes de iniciar sesión.')
+    }
+    setIsAuthLoading(false)
   }
 
   const handlePhotoUpload = (event: ChangeEvent<HTMLInputElement>) => {
@@ -120,6 +209,7 @@ function App() {
     const reader = new FileReader()
     reader.onload = () => {
       setPhotoError('')
+      setPhotoFile(file)
       setPhotoPreview(String(reader.result))
     }
     reader.readAsDataURL(file)
@@ -145,69 +235,120 @@ function App() {
     const reader = new FileReader()
     reader.onload = () => {
       setStickerError('')
+      setStickerFile(file)
       setStickerPreview(String(reader.result))
     }
     reader.readAsDataURL(file)
   }
 
-  const handleAddPhoto = (event: FormEvent<HTMLFormElement>) => {
+  const handleAddPhoto = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    if (!photoPreview) return
+    if (!photoPreview || !photoFile) return
 
-    setPhotos((currentPhotos) => [
-      {
-        id: createId(),
-        image: photoPreview,
-        stickerImage: stickerPreview,
-        stickerPosition: stickerPreview ? photoForm.stickerPosition : undefined,
-        isFavorite: photoForm.isFavorite,
-        description: photoForm.description,
-        caption: photoForm.caption,
-        place: photoForm.place || 'Sin lugar definido',
-        date: photoForm.date,
-        frameColor: photoForm.frameColor,
-        tilt: `${Math.random() > 0.5 ? '' : '-'}${(Math.random() * 2.5 + 0.5).toFixed(1)}deg`,
-      },
-      ...currentPhotos,
-    ])
+    if (supabase && user) {
+      try {
+        const savedPhoto = await createPhoto(photoFile, stickerFile, photoForm)
+        setPhotos((currentPhotos) => [savedPhoto, ...currentPhotos])
+      } catch (error) {
+        setPhotoError(error instanceof Error ? error.message : 'No se pudo guardar la foto en Supabase.')
+        return
+      }
+    } else {
+      setPhotos((currentPhotos) => [
+        {
+          id: createId(),
+          image: photoPreview,
+          stickerImage: stickerPreview,
+          stickerPosition: stickerPreview ? photoForm.stickerPosition : undefined,
+          isFavorite: photoForm.isFavorite,
+          description: photoForm.description,
+          caption: photoForm.caption,
+          place: photoForm.place || 'Sin lugar definido',
+          date: photoForm.date,
+          frameColor: photoForm.frameColor,
+          tilt: `${Math.random() > 0.5 ? '' : '-'}${(Math.random() * 2.5 + 0.5).toFixed(1)}deg`,
+        },
+        ...currentPhotos,
+      ])
+    }
 
     setPhotoForm(defaultPhotoForm)
     setPhotoPreview('')
     setStickerPreview('')
+    setPhotoFile(null)
+    setStickerFile(null)
     setPhotoError('')
     setStickerError('')
     if (fileInputRef.current) fileInputRef.current.value = ''
     if (stickerInputRef.current) stickerInputRef.current.value = ''
   }
 
-  const handleAddPlan = (event: FormEvent<HTMLFormElement>) => {
+  const handleAddPlan = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setPlans((currentPlans) => [
-      {
-        id: createId(),
-        place: planForm.place,
-        locationUrl: normalizeSafeUrl(planForm.locationUrl),
-        description: planForm.description,
-        date: planForm.date,
-        status: planForm.status,
-        activities: planForm.activities
-          .split('\n')
-          .map((activity) => activity.trim())
-          .filter(Boolean),
-      },
-      ...currentPlans,
-    ])
+
+    if (supabase && user) {
+      try {
+        const savedPlan = await createPlan(planForm)
+        setPlans((currentPlans) => [savedPlan, ...currentPlans])
+      } catch (error) {
+        setDataError(error instanceof Error ? error.message : 'No se pudo guardar la cita en Supabase.')
+        return
+      }
+    } else {
+      setPlans((currentPlans) => [
+        {
+          id: createId(),
+          place: planForm.place,
+          locationUrl: planForm.locationUrl,
+          description: planForm.description,
+          date: planForm.date,
+          status: planForm.status,
+          activities: planForm.activities
+            .split('\n')
+            .map((activity) => activity.trim())
+            .filter(Boolean),
+        },
+        ...currentPlans,
+      ])
+    }
     setPlanForm(defaultPlanForm)
   }
 
-  const handleTogglePhotoFavorite = (photoId: string) => {
+  const handleTogglePhotoFavorite = async (photoId: string) => {
+    const photo = photos.find((currentPhoto) => currentPhoto.id === photoId)
+    if (supabase && user && photo) {
+      try {
+        await updatePhoto(photoId, {
+          description: photo.description,
+          caption: photo.caption,
+          place: photo.place,
+          date: photo.date,
+          frameColor: photo.frameColor,
+          stickerPosition: photo.stickerPosition ?? 'topRight',
+          isFavorite: !photo.isFavorite,
+        })
+      } catch (error) {
+        setDataError(error instanceof Error ? error.message : 'No se pudo actualizar la foto favorita.')
+        return
+      }
+    }
+
     setPhotos((currentPhotos) =>
       currentPhotos.map((photo) => (photo.id === photoId ? { ...photo, isFavorite: !photo.isFavorite } : photo)),
     )
   }
 
-  const handleUpdatePhoto = (photoId: string, updates: PhotoFormState) => {
+  const handleUpdatePhoto = async (photoId: string, updates: PhotoFormState) => {
+    if (supabase && user) {
+      try {
+        await updatePhoto(photoId, updates)
+      } catch (error) {
+        setDataError(error instanceof Error ? error.message : 'No se pudo actualizar la foto.')
+        return
+      }
+    }
+
     setPhotos((currentPhotos) =>
       currentPhotos.map((photo) =>
         photo.id === photoId
@@ -226,11 +367,30 @@ function App() {
     )
   }
 
-  const handleDeletePhoto = (photoId: string) => {
+  const handleDeletePhoto = async (photoId: string) => {
+    const photo = photos.find((currentPhoto) => currentPhoto.id === photoId)
+    if (supabase && user && photo) {
+      try {
+        await deletePhoto(photo)
+      } catch (error) {
+        setDataError(error instanceof Error ? error.message : 'No se pudo borrar la foto.')
+        return
+      }
+    }
+
     setPhotos((currentPhotos) => currentPhotos.filter((photo) => photo.id !== photoId))
   }
 
-  const handleUpdatePlan = (planId: string, updates: PlanFormState) => {
+  const handleUpdatePlan = async (planId: string, updates: PlanFormState) => {
+    if (supabase && user) {
+      try {
+        await updatePlan(planId, updates)
+      } catch (error) {
+        setDataError(error instanceof Error ? error.message : 'No se pudo actualizar la cita.')
+        return
+      }
+    }
+
     setPlans((currentPlans) =>
       currentPlans.map((plan) =>
         plan.id === planId
@@ -251,20 +411,62 @@ function App() {
     )
   }
 
-  const handleDeletePlan = (planId: string) => {
+  const handleDeletePlan = async (planId: string) => {
+    if (supabase && user) {
+      try {
+        await deletePlan(planId)
+      } catch (error) {
+        setDataError(error instanceof Error ? error.message : 'No se pudo borrar la cita.')
+        return
+      }
+    }
+
     setPlans((currentPlans) => currentPlans.filter((plan) => plan.id !== planId))
   }
 
-  const handlePlanStatusChange = (planId: string, status: DatePlanStatus) => {
+  const handlePlanStatusChange = async (planId: string, status: DatePlanStatus) => {
+    const plan = plans.find((currentPlan) => currentPlan.id === planId)
+    if (supabase && user && plan) {
+      try {
+        await updatePlan(planId, {
+          place: plan.place,
+          locationUrl: plan.locationUrl,
+          description: plan.description,
+          date: plan.date,
+          status,
+          activities: plan.activities.join('\n'),
+        })
+      } catch (error) {
+        setDataError(error instanceof Error ? error.message : 'No se pudo cambiar el estado de la cita.')
+        return
+      }
+    }
+
     setPlans((currentPlans) => currentPlans.map((plan) => (plan.id === planId ? { ...plan, status } : plan)))
+  }
+
+  const handleLogout = async () => {
+    if (supabase) await supabase.auth.signOut()
+    setUser(null)
+    setPhotos(readStoredPhotos(initialPhotos))
+    setPlans(readStoredPlans(initialPlans))
   }
 
   const handleToggleTheme = () => {
     setThemeMode((currentTheme) => (currentTheme === 'light' ? 'dark' : 'light'))
   }
 
-  if (!isAuthenticated) {
-    return <LoginScreen themeMode={themeMode} onLogin={handleLogin} onToggleTheme={handleToggleTheme} />
+  if (!user) {
+    return (
+      <LoginScreen
+        themeMode={themeMode}
+        authError={authError}
+        authMessage={authMessage}
+        isAuthLoading={isAuthLoading}
+        onLogin={handleLogin}
+        onToggleTheme={handleToggleTheme}
+      />
+    )
   }
 
   return (
@@ -288,8 +490,13 @@ function App() {
           >
             {themeMode === 'light' ? 'Modo oscuro' : 'Modo claro'}
           </button>
+          <button className={`${styles.buttonGhost} px-4 py-2 text-sm font-semibold`} type="button" onClick={handleLogout}>
+            Salir
+          </button>
         </nav>
       </header>
+
+      {dataError && <p className={`${styles.panel} mx-auto mt-6 max-w-7xl rounded-3xl p-4 text-sm font-semibold`}>{dataError}</p>}
 
       {activeView === 'inicio' && (
         <Dashboard

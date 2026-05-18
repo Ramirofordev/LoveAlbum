@@ -4,7 +4,7 @@ export const maxPhotoSizeInBytes = 1.5 * 1024 * 1024
 export const maxStickerSizeInBytes = 512 * 1024
 
 const validStatuses = new Set(['pendiente', 'hecha', 'favorita'])
-const validStickerPositions = new Set(['topRight', 'topLeft', 'bottomRight', 'bottomLeft', 'center'])
+const validStickerPositions = new Set(['topRight', 'topLeft'])
 
 export const todayIsoDate = () => new Date().toISOString().slice(0, 10)
 
@@ -24,7 +24,7 @@ export const normalizeSafeUrl = (url: string) => {
 }
 
 export const readStoredPhotos = (fallback: Photo[]) =>
-  readStoredArray('loveAlbum.photos', fallback, isPhoto)
+  readStoredArray('loveAlbum.photos', fallback, isPhoto).map(normalizePhoto)
 export const readStoredPlans = (fallback: DatePlan[]) =>
   readStoredArray('loveAlbum.plans', fallback, isDatePlan)
 
@@ -48,6 +48,16 @@ export const writeStoredValue = (key: string, value: unknown) => {
     console.warn(`No se pudo persistir ${key} en localStorage.`, error)
   }
 }
+
+const normalizePhoto = (photo: Photo): Photo => ({
+  ...photo,
+  stickerPosition:
+    photo.stickerPosition && validStickerPositions.has(photo.stickerPosition)
+      ? photo.stickerPosition
+      : photo.stickerImage
+        ? 'topRight'
+        : undefined,
+})
 
 const readStoredArray = <T>(key: string, fallback: T[], isValidItem: (item: unknown) => item is T): T[] => {
   if (typeof window === 'undefined') return fallback
@@ -84,8 +94,7 @@ const isPhoto = (value: unknown): value is Photo => {
     isString(photo.frameColor) &&
     isString(photo.tilt) &&
     typeof photo.isFavorite === 'boolean' &&
-    (photo.stickerImage === undefined || isString(photo.stickerImage)) &&
-    (photo.stickerPosition === undefined || validStickerPositions.has(photo.stickerPosition))
+    (photo.stickerImage === undefined || isString(photo.stickerImage))
   )
 }
 

@@ -37,6 +37,7 @@ Love Album es una web romántica pensada como un álbum de fotos de pareja y un 
 - TypeScript
 - Tailwind CSS
 - CSS Modules
+- Supabase Auth, Database y Storage
 
 ## Cómo ejecutar el proyecto
 
@@ -55,21 +56,27 @@ npm run build
 npm run lint
 ```
 
+## Variables de entorno
+
+El frontend usa Supabase mediante variables de Vite:
+
+```bash
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_PUBLISHABLE_KEY=...
+```
+
+En desarrollo local se pueden guardar en `vite-project/.env.local`. Ese archivo está ignorado por Git gracias al patrón `*.local`.
+
 ## Estado actual
 
-El proyecto está en fase de prototipo frontend. Actualmente los datos viven en memoria del navegador, por lo que las fotos, citas y favoritos agregados se pierden al recargar la página.
+El proyecto ya tiene una primera integración backend con Supabase. El acceso usa Supabase Auth, las fotos se suben a Storage privado y los metadatos de fotos/citas se guardan en tablas protegidas con Row Level Security.
 
-El login todavía es simbólico/local. Para una versión privada real se recomienda implementar autenticación y persistencia con backend.
+La preferencia de tema sigue guardándose localmente en el navegador. Los datos iniciales locales quedan como referencia/fallback de prototipo.
 
 ## Próximas mejoras sugeridas
 
-- Persistencia local con `localStorage` o IndexedDB.
-- Autenticación real.
-- Backend y storage para imágenes, por ejemplo con Supabase.
-- Edición y eliminación de fotos.
-- Edición y eliminación de citas.
-- Cambio de estado de citas desde cada tarjeta.
-- Refactor por componentes para reducir el tamaño de `App.tsx`.
+- Flujo de invitación para que dos cuentas compartan el mismo álbum.
+- Migración asistida desde recuerdos guardados previamente en `localStorage` hacia Supabase.
 - Tests para filtros, favoritos y validaciones.
 
 ## Nota
