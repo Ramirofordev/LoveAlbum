@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+:root {
+  --ink: #3e2630;
+  --muted: #876f78;
+  --cream: #fff8ee;
+  --paper: #fffaf4;
+  --rose: #b85b72;
+  --rose-dark: #7c2940;
+  --gold: #c79a4b;
+  --blush: #f5cbd4;
+  --shadow: 0 24px 70px rgba(82, 42, 55, 0.18);
+
+  color: var(--ink);
+  background: var(--cream);
+  font-family: Candara, 'Trebuchet MS', sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+#root {
+  min-height: 100vh;
+}

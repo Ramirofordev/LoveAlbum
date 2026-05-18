@@ -1,0 +1,164 @@
+.appShell {
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(245, 203, 212, 0.75), transparent 28rem),
+    radial-gradient(circle at 88% 18%, rgba(199, 154, 75, 0.28), transparent 24rem),
+    linear-gradient(135deg, #fff8ee 0%, #ffeef2 45%, #fffaf4 100%);
+}
+
+.loginCard,
+.panel,
+.heroPanel {
+  border: 1px solid rgba(184, 91, 114, 0.18);
+  background: rgba(255, 250, 244, 0.82);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.titleFont {
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.buttonPrimary {
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--rose-dark), var(--rose));
+  color: #fffaf4;
+  box-shadow: 0 14px 30px rgba(124, 41, 64, 0.26);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.buttonPrimary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 38px rgba(124, 41, 64, 0.34);
+}
+
+.buttonGhost {
+  border: 1px solid rgba(184, 91, 114, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.42);
+  color: var(--rose-dark);
+}
+
+.navBar {
+  border: 1px solid rgba(184, 91, 114, 0.18);
+  background: rgba(255, 250, 244, 0.78);
+  box-shadow: 0 16px 42px rgba(82, 42, 55, 0.14);
+  backdrop-filter: blur(16px);
+}
+
+.navButton {
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--rose-dark);
+  transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.navButton:hover {
+  background: rgba(245, 203, 212, 0.42);
+  transform: translateY(-1px);
+}
+
+.navButtonActive {
+  background: linear-gradient(135deg, var(--rose-dark), var(--rose));
+  color: #fffaf4;
+}
+
+.input {
+  width: 100%;
+  border: 1px solid rgba(184, 91, 114, 0.2);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--ink);
+  outline: none;
+  padding: 0.85rem 1rem;
+}
+
+.input:focus {
+  border-color: rgba(184, 91, 114, 0.58);
+  box-shadow: 0 0 0 4px rgba(245, 203, 212, 0.45);
+}
+
+.polaroid {
+  position: relative;
+  transform: rotate(var(--tilt));
+  border: var(--frame-width, 12px) solid var(--frame-color, #fffaf4);
+  border-bottom-width: calc(var(--frame-width, 12px) + 34px);
+  background: #fffaf4;
+  box-shadow: 0 20px 45px rgba(78, 38, 48, 0.2);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.polaroid:hover {
+  transform: rotate(0deg) translateY(-6px);
+  box-shadow: 0 28px 58px rgba(78, 38, 48, 0.28);
+}
+
+.polaroidNote {
+  position: absolute;
+  right: 1rem;
+  bottom: -2.7rem;
+  left: 1rem;
+  color: var(--rose-dark);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.92rem;
+  text-align: center;
+}
+
+.sticker {
+  position: absolute;
+  width: 5rem;
+  height: 5rem;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 16px rgba(78, 38, 48, 0.25));
+  pointer-events: none;
+}
+
+.stickerTopRight {
+  top: -1.4rem;
+  right: -1.2rem;
+  transform: rotate(9deg);
+}
+
+.stickerTopLeft {
+  top: -1.4rem;
+  left: -1.2rem;
+  transform: rotate(-10deg);
+}
+
+.stickerBottomRight {
+  right: -1.2rem;
+  bottom: -1.1rem;
+  transform: rotate(-7deg);
+}
+
+.stickerBottomLeft {
+  bottom: -1.1rem;
+  left: -1.2rem;
+  transform: rotate(8deg);
+}
+
+.stickerCenter {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-4deg) scale(1.12);
+}
+
+.statusPill {
+  border: 1px solid rgba(184, 91, 114, 0.18);
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.texture::before {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  content: '';
+  opacity: 0.22;
+  background-image:
+    linear-gradient(rgba(124, 41, 64, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 41, 64, 0.05) 1px, transparent 1px);
+  background-size: 38px 38px;
+}
