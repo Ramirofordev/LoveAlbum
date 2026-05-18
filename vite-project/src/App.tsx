@@ -21,6 +21,7 @@ type ActiveView = 'inicio' | 'album' | 'citas'
 type StickerPosition = 'topRight' | 'topLeft' | 'bottomRight' | 'bottomLeft' | 'center'
 type PhotoFilter = 'todas' | 'fecha' | 'lugar'
 type PlanFilter = 'todas' | DatePlanStatus
+type ThemeMode = 'light' | 'dark'
 
 type DatePlan = {
   id: string
@@ -124,6 +125,7 @@ const normalizeSafeUrl = (url: string) => {
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [themeMode, setThemeMode] = useState<ThemeMode>('light')
   const [activeView, setActiveView] = useState<ActiveView>('inicio')
   const [isPhotoFormOpen, setIsPhotoFormOpen] = useState(false)
   const [isPlanFormOpen, setIsPlanFormOpen] = useState(false)
@@ -334,28 +336,39 @@ function App() {
     )
   }
 
+  const handleToggleTheme = () => {
+    setThemeMode((currentTheme) => (currentTheme === 'light' ? 'dark' : 'light'))
+  }
+
   if (!isAuthenticated) {
     return (
-      <main className={`${styles.appShell} ${styles.texture} grid place-items-center px-5 py-10`}>
+      <main className={`${styles.appShell} ${styles.texture} grid place-items-center px-5 py-10`} data-theme={themeMode}>
         <section className={`${styles.loginCard} w-full max-w-md rounded-[2rem] p-8 text-center`}>
-          <p className="mb-3 text-sm uppercase tracking-[0.35em] text-[#b85b72]">Love Album</p>
-          <h1 className={`${styles.titleFont} text-5xl leading-tight text-[#3e2630]`}>
+          <button
+            className={`${styles.buttonGhost} ${styles.themeToggle} mb-6 px-4 py-2 text-sm font-semibold`}
+            type="button"
+            onClick={handleToggleTheme}
+          >
+            {themeMode === 'light' ? 'Modo oscuro' : 'Modo claro'}
+          </button>
+          <p className={`${styles.eyebrow} mb-3 text-sm uppercase tracking-[0.35em]`}>Love Album</p>
+          <h1 className={`${styles.titleFont} ${styles.heading} text-5xl leading-tight`}>
             Nuestro pequeño museo
           </h1>
-          <p className="mt-4 text-[#876f78]">
+          <p className={`${styles.muted} mt-4`}>
             Entrá para guardar fotos, mensajes y planes que merecen quedarse.
           </p>
 
           <form className="mt-8 space-y-4 text-left" onSubmit={handleLogin}>
-            <label className="block text-sm font-semibold text-[#7c2940]">
+            <label className={`${styles.labelText} block text-sm font-semibold`}>
               Nombre de acceso
               <input className={`${styles.input} mt-2`} placeholder="Ej: Nachito y su amor" required />
             </label>
-            <label className="block text-sm font-semibold text-[#7c2940]">
+            <label className={`${styles.labelText} block text-sm font-semibold`}>
               Contraseña
               <input className={`${styles.input} mt-2`} type="password" placeholder="Por ahora es simbólica" required />
             </label>
-            <p className="rounded-2xl bg-white/50 p-3 text-xs text-[#876f78]">
+            <p className={`${styles.softCard} ${styles.muted} rounded-2xl p-3 text-xs`}>
               Nota: este login es local para el prototipo. Para privacidad real vamos a necesitar
               backend y autenticación segura.
             </p>
@@ -369,7 +382,7 @@ function App() {
   }
 
   return (
-    <main className={`${styles.appShell} ${styles.texture} px-4 py-6 md:px-8`}>
+    <main className={`${styles.appShell} ${styles.texture} px-4 py-6 md:px-8`} data-theme={themeMode}>
       <header className="sticky top-4 z-20 mx-auto flex max-w-7xl justify-end">
         <nav className={`${styles.navBar} flex flex-wrap justify-end gap-2 rounded-full p-2`} aria-label="Secciones principales">
           {(['inicio', 'album', 'citas'] as ActiveView[]).map((view) => (
@@ -382,6 +395,13 @@ function App() {
               {view === 'inicio' ? 'Inicio' : view === 'album' ? 'Álbum' : 'Citas'}
             </button>
           ))}
+          <button
+            className={`${styles.buttonGhost} ${styles.themeToggle} px-4 py-2 text-sm font-semibold`}
+            type="button"
+            onClick={handleToggleTheme}
+          >
+            {themeMode === 'light' ? 'Modo oscuro' : 'Modo claro'}
+          </button>
         </nav>
       </header>
 
@@ -390,24 +410,24 @@ function App() {
       <section className={`${styles.heroPanel} mx-auto mt-6 max-w-7xl rounded-[2rem] p-6 md:p-10`}>
         <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
-            <p className="mb-3 text-sm uppercase tracking-[0.35em] text-[#b85b72]">Álbum privado</p>
-            <h1 className={`${styles.titleFont} text-5xl leading-none text-[#3e2630] md:text-7xl`}>
+            <p className={`${styles.eyebrow} mb-3 text-sm uppercase tracking-[0.35em]`}>Álbum privado</p>
+            <h1 className={`${styles.titleFont} ${styles.heading} text-5xl leading-none md:text-7xl`}>
               Nuestra historia, una cita a la vez.
             </h1>
-            <p className="mt-5 text-lg text-[#876f78]">
+            <p className={`${styles.muted} mt-5 text-lg`}>
               Fotos con mensajes, recuerdos por lugar o fecha, y planes románticos para seguir
               construyendo capítulos juntos.
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-3 text-center text-sm text-[#7c2940]">
-            <div className="rounded-3xl bg-white/50 p-4">
+          <div className={`${styles.labelText} grid grid-cols-3 gap-3 text-center text-sm`}>
+            <div className={`${styles.softCard} rounded-3xl p-4`}>
               <strong className="block text-3xl">{photos.length}</strong> fotos
             </div>
-            <div className="rounded-3xl bg-white/50 p-4">
+            <div className={`${styles.softCard} rounded-3xl p-4`}>
               <strong className="block text-3xl">{plans.length}</strong> citas
             </div>
-            <div className="rounded-3xl bg-white/50 p-4">
+            <div className={`${styles.softCard} rounded-3xl p-4`}>
               <strong className="block text-3xl">♡</strong> privado
             </div>
           </div>
@@ -416,54 +436,54 @@ function App() {
 
       <section className="mx-auto mt-8 grid max-w-7xl gap-6 xl:grid-cols-3">
         <div className={`${styles.panel} rounded-[2rem] p-6`}>
-          <p className="text-sm uppercase tracking-[0.25em] text-[#b85b72]">Fotos favoritas</p>
-          <h2 className={`${styles.titleFont} mt-2 text-3xl text-[#3e2630]`}>Recuerdos elegidos</h2>
+          <p className={`${styles.eyebrow} text-sm uppercase tracking-[0.25em]`}>Fotos favoritas</p>
+          <h2 className={`${styles.titleFont} ${styles.heading} mt-2 text-3xl`}>Recuerdos elegidos</h2>
           <div className="mt-5 grid gap-4">
             {favoritePhotos.length > 0 ? (
               favoritePhotos.slice(0, 2).map((photo) => (
-                <article className="rounded-3xl bg-white/55 p-3" key={photo.id}>
+                <article className={`${styles.softCard} rounded-3xl p-3`} key={photo.id}>
                   <img className="h-36 w-full rounded-2xl object-cover" src={photo.image} alt={photo.description} />
-                  <p className="mt-3 text-sm font-semibold text-[#7c2940]">♡ {photo.place}</p>
-                  <p className="text-sm text-[#876f78]">{photo.caption}</p>
+                  <p className={`${styles.labelText} mt-3 text-sm font-semibold`}>♡ {photo.place}</p>
+                  <p className={`${styles.muted} text-sm`}>{photo.caption}</p>
                 </article>
               ))
             ) : (
-              <p className="text-sm text-[#876f78]">Todavía no marcaste fotos como favoritas.</p>
+              <p className={`${styles.muted} text-sm`}>Todavía no marcaste fotos como favoritas.</p>
             )}
           </div>
         </div>
 
         <div className={`${styles.panel} rounded-[2rem] p-6`}>
-          <p className="text-sm uppercase tracking-[0.25em] text-[#b85b72]">Citas favoritas</p>
-          <h2 className={`${styles.titleFont} mt-2 text-3xl text-[#3e2630]`}>Planes especiales</h2>
+          <p className={`${styles.eyebrow} text-sm uppercase tracking-[0.25em]`}>Citas favoritas</p>
+          <h2 className={`${styles.titleFont} ${styles.heading} mt-2 text-3xl`}>Planes especiales</h2>
           <div className="mt-5 grid gap-3">
             {favoritePlans.length > 0 ? (
               favoritePlans.map((plan) => (
-                <article className="rounded-3xl bg-white/55 p-4" key={plan.id}>
-                  <h3 className="font-bold text-[#3e2630]">{plan.place}</h3>
-                  <p className="text-sm text-[#876f78]">{plan.date} · {plan.description}</p>
+                <article className={`${styles.softCard} rounded-3xl p-4`} key={plan.id}>
+                  <h3 className={`${styles.heading} font-bold`}>{plan.place}</h3>
+                  <p className={`${styles.muted} text-sm`}>{plan.date} · {plan.description}</p>
                 </article>
               ))
             ) : (
-              <p className="text-sm text-[#876f78]">No hay citas favoritas aún.</p>
+              <p className={`${styles.muted} text-sm`}>No hay citas favoritas aún.</p>
             )}
           </div>
         </div>
 
         <div className={`${styles.panel} rounded-[2rem] p-6`}>
-          <p className="text-sm uppercase tracking-[0.25em] text-[#b85b72]">Pendientes próximas</p>
-          <h2 className={`${styles.titleFont} mt-2 text-3xl text-[#3e2630]`}>Lo que viene</h2>
+          <p className={`${styles.eyebrow} text-sm uppercase tracking-[0.25em]`}>Pendientes próximas</p>
+          <h2 className={`${styles.titleFont} ${styles.heading} mt-2 text-3xl`}>Lo que viene</h2>
           <div className="mt-5 grid gap-3">
             {upcomingPendingPlans.length > 0 ? (
               upcomingPendingPlans.map((plan) => (
-                <article className="rounded-3xl bg-white/55 p-4" key={plan.id}>
-                  <h3 className="font-bold text-[#3e2630]">{plan.place}</h3>
-                  <p className="text-sm text-[#876f78]">{plan.date}</p>
-                  <p className="mt-2 text-sm text-[#5f4a52]">{plan.description}</p>
+                <article className={`${styles.softCard} rounded-3xl p-4`} key={plan.id}>
+                  <h3 className={`${styles.heading} font-bold`}>{plan.place}</h3>
+                  <p className={`${styles.muted} text-sm`}>{plan.date}</p>
+                  <p className={`${styles.bodyText} mt-2 text-sm`}>{plan.description}</p>
                 </article>
               ))
             ) : (
-              <p className="text-sm text-[#876f78]">No hay citas pendientes próximas.</p>
+              <p className={`${styles.muted} text-sm`}>No hay citas pendientes próximas.</p>
             )}
           </div>
         </div>
@@ -475,8 +495,8 @@ function App() {
       <section className="mx-auto mt-8 grid max-w-7xl gap-8">
         <div className={`${styles.panel} flex flex-col gap-4 rounded-[2rem] p-6 md:flex-row md:items-center md:justify-between`}>
           <div>
-            <p className="text-sm uppercase tracking-[0.25em] text-[#b85b72]">Nueva foto</p>
-            <h2 className={`${styles.titleFont} mt-2 text-3xl text-[#3e2630]`}>Gestionar álbum</h2>
+            <p className={`${styles.eyebrow} text-sm uppercase tracking-[0.25em]`}>Nueva foto</p>
+            <h2 className={`${styles.titleFont} ${styles.heading} mt-2 text-3xl`}>Gestionar álbum</h2>
           </div>
           <button
             className={`${styles.buttonPrimary} px-6 py-3 font-semibold`}
@@ -489,11 +509,11 @@ function App() {
 
         {isPhotoFormOpen && (
         <form className={`${styles.panel} rounded-[2rem] p-6`} onSubmit={handleAddPhoto}>
-          <p className="text-sm uppercase tracking-[0.25em] text-[#b85b72]">Nueva foto</p>
-          <h2 className={`${styles.titleFont} mt-2 text-3xl text-[#3e2630]`}>Guardar un recuerdo</h2>
+          <p className={`${styles.eyebrow} text-sm uppercase tracking-[0.25em]`}>Nueva foto</p>
+          <h2 className={`${styles.titleFont} ${styles.heading} mt-2 text-3xl`}>Guardar un recuerdo</h2>
 
           <div className="mt-6 grid gap-4">
-            <label className="block text-sm font-semibold text-[#7c2940]">
+            <label className={`${styles.labelText} block text-sm font-semibold`}>
               Imagen
               <input
                 ref={fileInputRef}
@@ -504,11 +524,11 @@ function App() {
                 required
               />
             </label>
-            {photoError && <p className="text-sm font-semibold text-[#b85b72]">{photoError}</p>}
+            {photoError && <p className={`${styles.eyebrow} text-sm font-semibold`}>{photoError}</p>}
             {photoPreview && (
               <img className="h-52 w-full rounded-3xl object-cover" src={photoPreview} alt="Vista previa" />
             )}
-            <label className="block text-sm font-semibold text-[#7c2940]">
+            <label className={`${styles.labelText} block text-sm font-semibold`}>
               Sticker decorativo opcional
               <input
                 ref={stickerInputRef}
@@ -518,14 +538,14 @@ function App() {
                 onChange={handleStickerUpload}
               />
             </label>
-            {stickerError && <p className="text-sm font-semibold text-[#b85b72]">{stickerError}</p>}
+            {stickerError && <p className={`${styles.eyebrow} text-sm font-semibold`}>{stickerError}</p>}
             {stickerPreview && (
-              <div className="flex items-center gap-3 rounded-3xl bg-white/50 p-3 text-sm text-[#876f78]">
+              <div className={`${styles.softCard} ${styles.muted} flex items-center gap-3 rounded-3xl p-3 text-sm`}>
                 <img className="h-14 w-14 rounded-2xl object-contain" src={stickerPreview} alt="Sticker elegido" />
                 Sticker listo para pegar: {stickerPositionLabels[photoForm.stickerPosition]}.
               </div>
             )}
-            <label className="block text-sm font-semibold text-[#7c2940]">
+            <label className={`${styles.labelText} block text-sm font-semibold`}>
               Posición del sticker
               <select
                 className={`${styles.input} mt-2`}
@@ -544,7 +564,7 @@ function App() {
                 ))}
               </select>
             </label>
-            <label className="block text-sm font-semibold text-[#7c2940]">
+            <label className={`${styles.labelText} block text-sm font-semibold`}>
               Lugar
               <input
                 className={`${styles.input} mt-2`}
@@ -553,7 +573,7 @@ function App() {
                 onChange={(event) => setPhotoForm({ ...photoForm, place: event.target.value })}
               />
             </label>
-            <label className="block text-sm font-semibold text-[#7c2940]">
+            <label className={`${styles.labelText} block text-sm font-semibold`}>
               Fecha
               <input
                 className={`${styles.input} mt-2`}
@@ -562,7 +582,7 @@ function App() {
                 onChange={(event) => setPhotoForm({ ...photoForm, date: event.target.value })}
               />
             </label>
-            <label className="block text-sm font-semibold text-[#7c2940]">
+            <label className={`${styles.labelText} block text-sm font-semibold`}>
               Descripción
               <textarea
                 className={`${styles.input} mt-2`}
@@ -572,7 +592,7 @@ function App() {
                 required
               />
             </label>
-            <label className="block text-sm font-semibold text-[#7c2940]">
+            <label className={`${styles.labelText} block text-sm font-semibold`}>
               Pie de foto amoroso
               <textarea
                 className={`${styles.input} mt-2`}
@@ -582,7 +602,7 @@ function App() {
                 required
               />
             </label>
-            <label className="text-sm font-semibold text-[#7c2940]">
+            <label className={`${styles.labelText} text-sm font-semibold`}>
               Color del contorno
               <input
                 className="ml-3 h-10 w-16 rounded-xl border-0 bg-transparent align-middle"
@@ -591,9 +611,9 @@ function App() {
                 onChange={(event) => setPhotoForm({ ...photoForm, frameColor: event.target.value })}
               />
             </label>
-            <label className="flex items-center gap-3 rounded-3xl bg-white/50 p-4 text-sm font-semibold text-[#7c2940]">
+            <label className={`${styles.softCard} ${styles.labelText} flex items-center gap-3 rounded-3xl p-4 text-sm font-semibold`}>
               <input
-                className="h-5 w-5 accent-[#b85b72]"
+                className="h-5 w-5 accent-[var(--rose)]"
                 type="checkbox"
                 checked={photoForm.isFavorite}
                 onChange={(event) => setPhotoForm({ ...photoForm, isFavorite: event.target.checked })}
@@ -610,11 +630,11 @@ function App() {
         <div className={`${styles.panel} rounded-[2rem] p-6`}>
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-sm uppercase tracking-[0.25em] text-[#b85b72]">Recuerdos</p>
-              <h2 className={`${styles.titleFont} mt-2 text-3xl text-[#3e2630]`}>Álbum polaroid</h2>
+              <p className={`${styles.eyebrow} text-sm uppercase tracking-[0.25em]`}>Recuerdos</p>
+              <h2 className={`${styles.titleFont} ${styles.heading} mt-2 text-3xl`}>Álbum polaroid</h2>
             </div>
             <div className="flex flex-col gap-3 md:items-end">
-              <p className="max-w-md text-sm text-[#876f78]">Clasificado por lugares: {groupedPlaces}</p>
+              <p className={`${styles.muted} max-w-md text-sm`}>Clasificado por lugares: {groupedPlaces}</p>
               <div className="flex flex-wrap gap-2">
                 {(['todas', 'fecha', 'lugar'] as PhotoFilter[]).map((filter) => (
                   <button
@@ -649,7 +669,7 @@ function App() {
                   />
                 )}
                 <button
-                  className="absolute left-3 top-3 rounded-full bg-white/80 px-3 py-2 text-sm font-bold text-[#b85b72] shadow-sm"
+                  className={`${styles.favoriteButton} absolute left-3 top-3 rounded-full px-3 py-2 text-sm font-bold shadow-sm`}
                   type="button"
                   onClick={() => handleTogglePhotoFavorite(photo.id)}
                   aria-label={photo.isFavorite ? 'Quitar de favoritas' : 'Marcar como favorita'}
@@ -658,8 +678,8 @@ function App() {
                 </button>
                 <span className={styles.polaroidNote}>{photo.caption}</span>
                 <div className="mt-4 px-1 pb-2 text-left">
-                  <h3 className="font-semibold text-[#3e2630]">{photo.place}</h3>
-                  <p className="text-sm text-[#876f78]">{photo.date || 'Sin fecha'} · {photo.description}</p>
+                  <h3 className={`${styles.heading} font-semibold`}>{photo.place}</h3>
+                  <p className={`${styles.muted} text-sm`}>{photo.date || 'Sin fecha'} · {photo.description}</p>
                 </div>
               </article>
             ))}
@@ -672,8 +692,8 @@ function App() {
       <section className="mx-auto mt-8 grid max-w-7xl gap-8">
         <div className={`${styles.panel} flex flex-col gap-4 rounded-[2rem] p-6 md:flex-row md:items-center md:justify-between`}>
           <div>
-            <p className="text-sm uppercase tracking-[0.25em] text-[#b85b72]">Agenda romántica</p>
-            <h2 className={`${styles.titleFont} mt-2 text-3xl text-[#3e2630]`}>Gestionar citas</h2>
+            <p className={`${styles.eyebrow} text-sm uppercase tracking-[0.25em]`}>Agenda romántica</p>
+            <h2 className={`${styles.titleFont} ${styles.heading} mt-2 text-3xl`}>Gestionar citas</h2>
           </div>
           <button
             className={`${styles.buttonPrimary} px-6 py-3 font-semibold`}
@@ -686,11 +706,11 @@ function App() {
 
         {isPlanFormOpen && (
         <form className={`${styles.panel} rounded-[2rem] p-6`} onSubmit={handleAddPlan}>
-          <p className="text-sm uppercase tracking-[0.25em] text-[#b85b72]">Nueva cita</p>
-          <h2 className={`${styles.titleFont} mt-2 text-3xl text-[#3e2630]`}>Planificar una cita</h2>
+          <p className={`${styles.eyebrow} text-sm uppercase tracking-[0.25em]`}>Nueva cita</p>
+          <h2 className={`${styles.titleFont} ${styles.heading} mt-2 text-3xl`}>Planificar una cita</h2>
 
           <div className="mt-6 grid gap-4">
-            <label className="block text-sm font-semibold text-[#7c2940]">
+            <label className={`${styles.labelText} block text-sm font-semibold`}>
               Lugar
               <input
                 className={`${styles.input} mt-2`}
@@ -700,7 +720,7 @@ function App() {
                 required
               />
             </label>
-            <label className="block text-sm font-semibold text-[#7c2940]">
+            <label className={`${styles.labelText} block text-sm font-semibold`}>
               Link de ubicación
               <input
                 className={`${styles.input} mt-2`}
@@ -709,7 +729,7 @@ function App() {
                 onChange={(event) => setPlanForm({ ...planForm, locationUrl: event.target.value })}
               />
             </label>
-            <label className="block text-sm font-semibold text-[#7c2940]">
+            <label className={`${styles.labelText} block text-sm font-semibold`}>
               Fecha
               <input
                 className={`${styles.input} mt-2`}
@@ -719,7 +739,7 @@ function App() {
                 required
               />
             </label>
-            <label className="block text-sm font-semibold text-[#7c2940]">
+            <label className={`${styles.labelText} block text-sm font-semibold`}>
               Estado
               <select
                 className={`${styles.input} mt-2`}
@@ -733,7 +753,7 @@ function App() {
                 <option value="favorita">Favorita</option>
               </select>
             </label>
-            <label className="block text-sm font-semibold text-[#7c2940]">
+            <label className={`${styles.labelText} block text-sm font-semibold`}>
               Resumen de la cita
               <textarea
                 className={`${styles.input} mt-2`}
@@ -743,7 +763,7 @@ function App() {
                 required
               />
             </label>
-            <label className="block text-sm font-semibold text-[#7c2940]">
+            <label className={`${styles.labelText} block text-sm font-semibold`}>
               Actividades
               <textarea
                 className={`${styles.input} mt-2`}
@@ -763,8 +783,8 @@ function App() {
         <div className={`${styles.panel} rounded-[2rem] p-6`}>
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-sm uppercase tracking-[0.25em] text-[#b85b72]">Agenda romántica</p>
-              <h2 className={`${styles.titleFont} mt-2 text-3xl text-[#3e2630]`}>Citas guardadas</h2>
+              <p className={`${styles.eyebrow} text-sm uppercase tracking-[0.25em]`}>Agenda romántica</p>
+              <h2 className={`${styles.titleFont} ${styles.heading} mt-2 text-3xl`}>Citas guardadas</h2>
             </div>
             <div className="flex flex-wrap gap-2">
               {(['todas', 'pendiente', 'hecha', 'favorita'] as PlanFilter[]).map((filter) => (
@@ -782,27 +802,27 @@ function App() {
 
           <div className="mt-6 grid gap-4">
             {filteredPlans.map((plan) => (
-              <article className="rounded-[1.5rem] bg-white/55 p-5 shadow-sm" key={plan.id}>
+              <article className={`${styles.softCard} rounded-[1.5rem] p-5 shadow-sm`} key={plan.id}>
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div>
-                    <h3 className="text-xl font-bold text-[#3e2630]">{plan.place}</h3>
-                    <p className="mt-1 text-sm text-[#876f78]">{plan.date}</p>
+                    <h3 className={`${styles.heading} text-xl font-bold`}>{plan.place}</h3>
+                    <p className={`${styles.muted} mt-1 text-sm`}>{plan.date}</p>
                   </div>
-                  <span className={`${styles.statusPill} rounded-full px-4 py-2 text-sm text-[#7c2940]`}>
+                  <span className={`${styles.statusPill} ${styles.labelText} rounded-full px-4 py-2 text-sm`}>
                     {statusLabels[plan.status]}
                   </span>
                 </div>
-                <p className="mt-4 text-[#5f4a52]">{plan.description}</p>
-                <ul className="mt-4 grid gap-2 text-sm text-[#7c2940]">
+                <p className={`${styles.bodyText} mt-4`}>{plan.description}</p>
+                <ul className={`${styles.labelText} mt-4 grid gap-2 text-sm`}>
                   {plan.activities.map((activity, activityIndex) => (
-                    <li className="rounded-2xl bg-[#fff8ee]/80 px-4 py-2" key={`${activity}-${activityIndex}`}>
+                    <li className={`${styles.activityItem} rounded-2xl px-4 py-2`} key={`${activity}-${activityIndex}`}>
                       ♡ {activity}
                     </li>
                   ))}
                 </ul>
                 {plan.locationUrl && (
                   <a
-                    className="mt-4 inline-flex text-sm font-semibold text-[#b85b72] underline-offset-4 hover:underline"
+                    className={`${styles.eyebrow} mt-4 inline-flex text-sm font-semibold underline-offset-4 hover:underline`}
                     href={plan.locationUrl}
                     target="_blank"
                     rel="noreferrer"
