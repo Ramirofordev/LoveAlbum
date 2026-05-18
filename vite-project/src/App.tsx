@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import type { User } from '@supabase/supabase-js'
 import styles from './App.module.css'
+import { AlbumGate } from './components/AlbumGate'
 import { AlbumView } from './components/AlbumView'
 import { Dashboard } from './components/Dashboard'
 import { DatePlanner } from './components/DatePlanner'
@@ -9,16 +10,19 @@ import { LoginScreen } from './components/LoginScreen'
 import { initialPhotos, initialPlans } from './data'
 import { supabase } from './lib/supabase'
 import {
+  createAlbum,
   createPhoto,
   createPlan,
   deletePhoto,
   deletePlan,
+  fetchAlbums,
   fetchPhotos,
   fetchPlans,
+  joinAlbum,
   updatePhoto,
   updatePlan,
 } from './services/loveAlbumService'
-import type { ActiveView, DatePlan, DatePlanStatus, Photo, PhotoFilter, PhotoFormState, PlanFilter, PlanFormState, ThemeMode } from './types'
+import type { ActiveView, DatePlan, DatePlanStatus, LoveAlbum, Photo, PhotoFilter, PhotoFormState, PlanFilter, PlanFormState, ThemeMode } from './types'
 import {
   createId,
   maxPhotoSizeInBytes,
@@ -68,6 +72,12 @@ function App() {
   const [authError, setAuthError] = useState('')
   const [authMessage, setAuthMessage] = useState('')
   const [dataError, setDataError] = useState('')
+  const [albumError, setAlbumError] = useState('')
+  const [isAlbumLoading, setIsAlbumLoading] = useState(false)
+  const [albums, setAlbums] = useState<LoveAlbum[]>([])
+  const [currentAlbum, setCurrentAlbum] = useState<LoveAlbum | null>(null)
+  const [albumName, setAlbumName] = useState('')
+  const [inviteCode, setInviteCode] = useState('')
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => readStoredTheme('light'))
   const [activeView, setActiveView] = useState<ActiveView>('inicio')
   const [isPhotoFormOpen, setIsPhotoFormOpen] = useState(false)
@@ -109,7 +119,22 @@ function App() {
   useEffect(() => {
     if (!supabase || !user) return
 
-    Promise.all([fetchPhotos(), fetchPlans()])
+    fetchAlbums()
+      .then((remoteAlbums) => {
+        setAlbums(remoteAlbums)
+        setCurrentAlbum((selectedAlbum) => selectedAlbum ?? remoteAlbums[0] ?? null)
+        setAlbumError('')
+      })
+      .catch((error) => {
+        setAlbumError(error instanceof Error ? error.message : 'No se pudieron cargar tus álbumes.')
+      })
+      .finally(() => setIsAlbumLoading(false))
+  }, [user])
+
+  useEffect(() => {
+    if (!supabase || !user || !currentAlbum) return
+
+    Promise.all([fetchPhotos(currentAlbum.id), fetchPlans(currentAlbum.id)])
       .then(([remotePhotos, remotePlans]) => {
         setPhotos(remotePhotos)
         setPlans(remotePlans)
@@ -118,7 +143,7 @@ function App() {
       .catch((error) => {
         setDataError(error instanceof Error ? error.message : 'No se pudieron cargar los datos de Supabase.')
       })
-  }, [user])
+  }, [currentAlbum, user])
 
   const groupedPlaces = useMemo(() => Array.from(new Set(photos.map((photo) => photo.place))).join(' · '), [photos])
 
@@ -212,6 +237,47 @@ function App() {
     }
   }
 
+  const handleCreateAlbum = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setIsAlbumLoading(true)
+    setAlbumError('')
+
+    try {
+      const createdAlbum = await createAlbum(albumName)
+      setAlbums((currentAlbums) => [...currentAlbums, createdAlbum])
+      setCurrentAlbum(createdAlbum)
+      setAlbumName('')
+      setPhotos([])
+      setPlans([])
+    } catch (error) {
+      setAlbumError(error instanceof Error ? error.message : 'No se pudo crear el álbum.')
+    } finally {
+      setIsAlbumLoading(false)
+    }
+  }
+
+  const handleJoinAlbum = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setIsAlbumLoading(true)
+    setAlbumError('')
+
+    try {
+      const joinedAlbum = await joinAlbum(inviteCode)
+      setAlbums((currentAlbums) => {
+        if (currentAlbums.some((album) => album.id === joinedAlbum.id)) return currentAlbums
+        return [...currentAlbums, joinedAlbum]
+      })
+      setCurrentAlbum(joinedAlbum)
+      setInviteCode('')
+      setPhotos([])
+      setPlans([])
+    } catch (error) {
+      setAlbumError(error instanceof Error ? error.message : 'No se pudo unir al álbum.')
+    } finally {
+      setIsAlbumLoading(false)
+    }
+  }
+
   const handlePhotoUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
 
@@ -269,9 +335,9 @@ function App() {
 
     if (!photoPreview || !photoFile) return
 
-    if (supabase && user) {
+    if (supabase && user && currentAlbum) {
       try {
-        const savedPhoto = await createPhoto(photoFile, stickerFile, photoForm)
+        const savedPhoto = await createPhoto(currentAlbum.id, photoFile, stickerFile, photoForm)
         setPhotos((currentPhotos) => [savedPhoto, ...currentPhotos])
       } catch (error) {
         setPhotoError(error instanceof Error ? error.message : 'No se pudo guardar la foto en Supabase.')
@@ -310,9 +376,9 @@ function App() {
   const handleAddPlan = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    if (supabase && user) {
+    if (supabase && user && currentAlbum) {
       try {
-        const savedPlan = await createPlan(planForm)
+        const savedPlan = await createPlan(currentAlbum.id, planForm)
         setPlans((currentPlans) => [savedPlan, ...currentPlans])
       } catch (error) {
         setDataError(error instanceof Error ? error.message : 'No se pudo guardar la cita en Supabase.')
@@ -471,6 +537,8 @@ function App() {
   const handleLogout = async () => {
     if (supabase) await supabase.auth.signOut()
     setUser(null)
+    setAlbums([])
+    setCurrentAlbum(null)
     setPhotos(readStoredPhotos(initialPhotos))
     setPlans(readStoredPlans(initialPlans))
   }
@@ -488,6 +556,26 @@ function App() {
         isAuthLoading={isAuthLoading}
         onGoogleLogin={handleGoogleLogin}
         onLogin={handleLogin}
+        onToggleTheme={handleToggleTheme}
+      />
+    )
+  }
+
+  if (!currentAlbum) {
+    return (
+      <AlbumGate
+        albums={albums}
+        albumName={albumName}
+        inviteCode={inviteCode}
+        error={albumError}
+        isLoading={isAlbumLoading}
+        themeMode={themeMode}
+        onAlbumNameChange={setAlbumName}
+        onInviteCodeChange={setInviteCode}
+        onCreateAlbum={handleCreateAlbum}
+        onJoinAlbum={handleJoinAlbum}
+        onSelectAlbum={setCurrentAlbum}
+        onLogout={handleLogout}
         onToggleTheme={handleToggleTheme}
       />
     )
@@ -521,6 +609,27 @@ function App() {
       </header>
 
       {dataError && <p className={`${styles.panel} mx-auto mt-6 max-w-7xl rounded-3xl p-4 text-sm font-semibold`}>{dataError}</p>}
+
+      <section className={`${styles.panel} mx-auto mt-6 flex max-w-7xl flex-col gap-3 rounded-[2rem] p-5 md:flex-row md:items-center md:justify-between`}>
+        <div>
+          <p className={`${styles.eyebrow} text-xs uppercase tracking-[0.25em]`}>Álbum activo</p>
+          <h1 className={`${styles.heading} mt-1 text-2xl font-semibold`}>{currentAlbum.name}</h1>
+          <p className={`${styles.muted} mt-1 text-sm`}>Código para invitar a tu pareja: {currentAlbum.inviteCode}</p>
+        </div>
+        {albums.length > 1 && (
+          <select
+            className={styles.input}
+            value={currentAlbum.id}
+            onChange={(event) => setCurrentAlbum(albums.find((album) => album.id === event.target.value) ?? currentAlbum)}
+          >
+            {albums.map((album) => (
+              <option key={album.id} value={album.id}>
+                {album.name}
+              </option>
+            ))}
+          </select>
+        )}
+      </section>
 
       {activeView === 'inicio' && (
         <Dashboard

@@ -22,6 +22,12 @@ export type PhotoFilter = 'todas' | 'fecha' | 'lugar'
 export type PlanFilter = 'todas' | DatePlanStatus
 export type ThemeMode = 'light' | 'dark'
 
+export type LoveAlbum = {
+  id: string
+  name: string
+  inviteCode: string
+}
+
 export type DatePlan = {
   id: string
   place: string

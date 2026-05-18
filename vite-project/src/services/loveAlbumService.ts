@@ -1,6 +1,12 @@
 import { supabase } from '../lib/supabase'
-import type { DatePlan, Photo, PhotoFormState, PlanFormState, StickerPosition } from '../types'
+import type { DatePlan, LoveAlbum, Photo, PhotoFormState, PlanFormState, StickerPosition } from '../types'
 import { createId, normalizeSafeUrl } from '../utils'
+
+type LoveAlbumRow = {
+  id: string
+  name: string
+  invite_code: string
+}
 
 type LovePhotoRow = {
   id: string
@@ -30,12 +36,40 @@ const signedUrlTtlInSeconds = 60 * 60
 
 export const getPhotoExtension = (file: File) => file.name.split('.').pop()?.toLowerCase() || file.type.split('/').pop() || 'jpg'
 
-export async function fetchPhotos(): Promise<Photo[]> {
+export async function fetchAlbums(): Promise<LoveAlbum[]> {
+  if (!supabase) return []
+
+  const { data, error } = await supabase.from('love_albums').select('id, name, invite_code').order('created_at', { ascending: true })
+  if (error) throw error
+
+  return (data ?? []).map(mapAlbumRow)
+}
+
+export async function createAlbum(name: string): Promise<LoveAlbum> {
+  if (!supabase) throw new Error('Supabase no está configurado.')
+
+  const { data, error } = await supabase.rpc('create_love_album', { album_name: name })
+  if (error) throw error
+
+  return mapAlbumRow(data as LoveAlbumRow)
+}
+
+export async function joinAlbum(inviteCode: string): Promise<LoveAlbum> {
+  if (!supabase) throw new Error('Supabase no está configurado.')
+
+  const { data, error } = await supabase.rpc('join_love_album', { album_invite_code: inviteCode })
+  if (error) throw error
+
+  return mapAlbumRow(data as LoveAlbumRow)
+}
+
+export async function fetchPhotos(albumId: string): Promise<Photo[]> {
   if (!supabase) return []
 
   const { data, error } = await supabase
     .from('love_photos')
     .select('id, image_path, sticker_path, sticker_position, is_favorite, description, caption, place, photo_date, frame_color, tilt')
+    .eq('album_id', albumId)
     .order('created_at', { ascending: false })
 
   if (error) throw error
@@ -43,12 +77,13 @@ export async function fetchPhotos(): Promise<Photo[]> {
   return Promise.all((data ?? []).map(mapPhotoRow))
 }
 
-export async function fetchPlans(): Promise<DatePlan[]> {
+export async function fetchPlans(albumId: string): Promise<DatePlan[]> {
   if (!supabase) return []
 
   const { data, error } = await supabase
     .from('love_date_plans')
     .select('id, place, location_url, description, plan_date, status, activities')
+    .eq('album_id', albumId)
     .order('plan_date', { ascending: true, nullsFirst: false })
 
   if (error) throw error
@@ -56,7 +91,7 @@ export async function fetchPlans(): Promise<DatePlan[]> {
   return (data ?? []).map(mapPlanRow)
 }
 
-export async function createPhoto(photoFile: File, stickerFile: File | null, form: PhotoFormState): Promise<Photo> {
+export async function createPhoto(albumId: string, photoFile: File, stickerFile: File | null, form: PhotoFormState): Promise<Photo> {
   if (!supabase) throw new Error('Supabase no está configurado.')
 
   const {
@@ -67,19 +102,20 @@ export async function createPhoto(photoFile: File, stickerFile: File | null, for
   if (!user) throw new Error('Necesitás iniciar sesión para guardar fotos.')
 
   const photoId = createId()
-  const imagePath = `${user.id}/${photoId}.${getPhotoExtension(photoFile)}`
+  const imagePath = `${albumId}/${photoId}.${getPhotoExtension(photoFile)}`
   const { error: imageError } = await supabase.storage.from('photos').upload(imagePath, photoFile)
   if (imageError) throw imageError
 
   let stickerPath: string | null = null
   if (stickerFile) {
-    stickerPath = `${user.id}/${photoId}.${getPhotoExtension(stickerFile)}`
+    stickerPath = `${albumId}/${photoId}.${getPhotoExtension(stickerFile)}`
     const { error: stickerError } = await supabase.storage.from('stickers').upload(stickerPath, stickerFile)
     if (stickerError) throw stickerError
   }
 
   const row = {
     id: photoId,
+    album_id: albumId,
     user_id: user.id,
     image_path: imagePath,
     sticker_path: stickerPath,
@@ -121,17 +157,14 @@ export async function updatePhoto(photoId: string, updates: PhotoFormState) {
 export async function deletePhoto(photo: Photo) {
   if (!supabase) throw new Error('Supabase no está configurado.')
 
-  const filesToRemove = [photo.imagePath, photo.stickerPath].filter(Boolean) as string[]
-  if (filesToRemove.length > 0) {
-    await supabase.storage.from('photos').remove(photo.imagePath ? [photo.imagePath] : [])
-    if (photo.stickerPath) await supabase.storage.from('stickers').remove([photo.stickerPath])
-  }
+  if (photo.imagePath) await supabase.storage.from('photos').remove([photo.imagePath])
+  if (photo.stickerPath) await supabase.storage.from('stickers').remove([photo.stickerPath])
 
   const { error } = await supabase.from('love_photos').delete().eq('id', photo.id)
   if (error) throw error
 }
 
-export async function createPlan(form: PlanFormState): Promise<DatePlan> {
+export async function createPlan(albumId: string, form: PlanFormState): Promise<DatePlan> {
   if (!supabase) throw new Error('Supabase no está configurado.')
 
   const {
@@ -142,6 +175,7 @@ export async function createPlan(form: PlanFormState): Promise<DatePlan> {
   if (!user) throw new Error('Necesitás iniciar sesión para guardar citas.')
 
   const row = {
+    album_id: albumId,
     user_id: user.id,
     place: form.place,
     location_url: normalizeSafeUrl(form.locationUrl),
@@ -186,6 +220,14 @@ export async function deletePlan(planId: string) {
 
   const { error } = await supabase.from('love_date_plans').delete().eq('id', planId)
   if (error) throw error
+}
+
+function mapAlbumRow(row: LoveAlbumRow): LoveAlbum {
+  return {
+    id: row.id,
+    name: row.name,
+    inviteCode: row.invite_code,
+  }
 }
 
 async function mapPhotoRow(row: LovePhotoRow): Promise<Photo> {
