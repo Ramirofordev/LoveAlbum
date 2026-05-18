@@ -54,6 +54,28 @@ const defaultPlanForm: PlanFormState = {
   activities: '',
 }
 
+const getStoredAlbumIdKey = (userId: string) => `loveAlbum.currentAlbumId.${userId}`
+
+const readStoredAlbumId = (userId: string) => {
+  if (typeof window === 'undefined') return null
+
+  try {
+    return window.localStorage.getItem(getStoredAlbumIdKey(userId))
+  } catch {
+    return null
+  }
+}
+
+const writeStoredAlbumId = (userId: string, albumId: string) => {
+  if (typeof window === 'undefined') return
+
+  try {
+    window.localStorage.setItem(getStoredAlbumIdKey(userId), albumId)
+  } catch (error) {
+    console.warn('No se pudo persistir el álbum activo en localStorage.', error)
+  }
+}
+
 const getAuthErrorMessage = (message: string) => {
   if (message === 'Invalid login credentials') {
     return 'No encontramos esa cuenta o la contraseña no coincide. Si todavía no la creaste, usá “Crear cuenta”.'
@@ -119,10 +141,17 @@ function App() {
   useEffect(() => {
     if (!supabase || !user) return
 
+    setIsAlbumLoading(true)
     fetchAlbums()
       .then((remoteAlbums) => {
+        const storedAlbumId = readStoredAlbumId(user.id)
+        const storedAlbum = remoteAlbums.find((album) => album.id === storedAlbumId)
+
         setAlbums(remoteAlbums)
-        setCurrentAlbum((selectedAlbum) => selectedAlbum ?? remoteAlbums[0] ?? null)
+        setCurrentAlbum((selectedAlbum) => {
+          const stillAvailableAlbum = remoteAlbums.find((album) => album.id === selectedAlbum?.id)
+          return stillAvailableAlbum ?? storedAlbum ?? remoteAlbums[0] ?? null
+        })
         setAlbumError('')
       })
       .catch((error) => {
@@ -130,6 +159,12 @@ function App() {
       })
       .finally(() => setIsAlbumLoading(false))
   }, [user])
+
+  useEffect(() => {
+    if (!user || !currentAlbum) return
+
+    writeStoredAlbumId(user.id, currentAlbum.id)
+  }, [currentAlbum, user])
 
   useEffect(() => {
     if (!supabase || !user || !currentAlbum) return
@@ -562,6 +597,18 @@ function App() {
   }
 
   if (!currentAlbum) {
+    if (isAlbumLoading) {
+      return (
+        <main className={`${styles.appShell} ${styles.texture} grid min-h-screen place-items-center px-5 py-10`} data-theme={themeMode}>
+          <section className={`${styles.loginCard} w-full max-w-xl rounded-[2rem] p-8 text-center`}>
+            <p className={`${styles.eyebrow} text-sm uppercase tracking-[0.35em]`}>Love Album</p>
+            <h1 className={`${styles.titleFont} ${styles.heading} mt-3 text-4xl leading-tight`}>Cargando tu álbum</h1>
+            <p className={`${styles.muted} mt-3`}>Estamos buscando el espacio compartido de tu cuenta.</p>
+          </section>
+        </main>
+      )
+    }
+
     return (
       <AlbumGate
         albums={albums}
