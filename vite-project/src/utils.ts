@@ -1,7 +1,9 @@
 import type { DatePlan, Photo, ThemeMode } from './types'
 
-export const maxPhotoSizeInBytes = 1.5 * 1024 * 1024
+export const photoOptimizationThresholdInBytes = 1.5 * 1024 * 1024
+export const maxPhotoSizeInBytes = 5 * 1024 * 1024
 export const maxStickerSizeInBytes = 512 * 1024
+export const maxOptimizedPhotoSide = 1920
 
 const validStatuses = new Set(['pendiente', 'hecha', 'favorita'])
 const validStickerPositions = new Set(['topRight', 'topLeft'])
@@ -9,6 +11,39 @@ const validStickerPositions = new Set(['topRight', 'topLeft'])
 export const todayIsoDate = () => new Date().toISOString().slice(0, 10)
 
 export const createId = () => crypto.randomUUID()
+
+export async function optimizePhotoFile(file: File): Promise<{ file: File; wasOptimized: boolean }> {
+  if (file.size <= photoOptimizationThresholdInBytes || file.type === 'image/gif') {
+    return { file, wasOptimized: false }
+  }
+
+  const image = await loadImage(file)
+  const scale = Math.min(1, maxOptimizedPhotoSide / Math.max(image.width, image.height))
+  const width = Math.max(1, Math.round(image.width * scale))
+  const height = Math.max(1, Math.round(image.height * scale))
+
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+
+  const context = canvas.getContext('2d')
+  if (!context) return { file, wasOptimized: false }
+
+  context.drawImage(image, 0, 0, width, height)
+  URL.revokeObjectURL(image.src)
+
+  const optimizedBlob = await canvasToBlob(canvas, 'image/jpeg', 0.82)
+  if (!optimizedBlob || optimizedBlob.size >= file.size) {
+    return { file, wasOptimized: false }
+  }
+
+  const optimizedFile = new File([optimizedBlob], replaceFileExtension(file.name, 'jpg'), {
+    type: 'image/jpeg',
+    lastModified: Date.now(),
+  })
+
+  return { file: optimizedFile, wasOptimized: true }
+}
 
 export const normalizeSafeUrl = (url: string) => {
   const trimmedUrl = url.trim()
@@ -47,6 +82,27 @@ export const writeStoredValue = (key: string, value: unknown) => {
   } catch (error) {
     console.warn(`No se pudo persistir ${key} en localStorage.`, error)
   }
+}
+
+const loadImage = (file: File) =>
+  new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image()
+    image.onload = () => resolve(image)
+    image.onerror = () => {
+      URL.revokeObjectURL(image.src)
+      reject(new Error('No se pudo preparar la imagen para optimizarla.'))
+    }
+    image.src = URL.createObjectURL(file)
+  })
+
+const canvasToBlob = (canvas: HTMLCanvasElement, type: string, quality: number) =>
+  new Promise<Blob | null>((resolve) => {
+    canvas.toBlob(resolve, type, quality)
+  })
+
+const replaceFileExtension = (fileName: string, extension: string) => {
+  const nameWithoutExtension = fileName.replace(/\.[^/.]+$/, '')
+  return `${nameWithoutExtension || 'photo'}.${extension}`
 }
 
 const normalizePhoto = (photo: Photo): Photo => ({

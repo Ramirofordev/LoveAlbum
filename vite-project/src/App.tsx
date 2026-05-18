@@ -29,6 +29,7 @@ import {
   maxPhotoSizeInBytes,
   maxStickerSizeInBytes,
   normalizeSafeUrl,
+  optimizePhotoFile,
   readStoredPhotos,
   readStoredPlans,
   readStoredTheme,
@@ -314,7 +315,7 @@ function App() {
     }
   }
 
-  const handlePhotoUpload = (event: ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
 
     if (!file) return
@@ -325,19 +326,38 @@ function App() {
       return
     }
 
-    if (file.size > maxPhotoSizeInBytes) {
-      setPhotoError('La imagen debe pesar menos de 1.5 MB para poder guardarse localmente.')
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
+      setPhotoError('Usá una imagen JPG, PNG, WEBP o GIF para guardarla en el álbum.')
+      event.target.value = ''
+      return
+    }
+
+    let selectedFile = file
+    let wasOptimized = false
+
+    try {
+      const optimizedPhoto = await optimizePhotoFile(file)
+      selectedFile = optimizedPhoto.file
+      wasOptimized = optimizedPhoto.wasOptimized
+    } catch (error) {
+      setPhotoError(error instanceof Error ? error.message : 'No se pudo preparar la imagen seleccionada.')
+      event.target.value = ''
+      return
+    }
+
+    if (selectedFile.size > maxPhotoSizeInBytes) {
+      setPhotoError('La imagen sigue siendo muy pesada. Probá con una foto menor a 5 MB o una captura más liviana.')
       event.target.value = ''
       return
     }
 
     const reader = new FileReader()
     reader.onload = () => {
-      setPhotoError('')
-      setPhotoFile(file)
+      setPhotoError(wasOptimized ? 'La imagen era grande, así que la optimizamos para guardarla más rápido.' : '')
+      setPhotoFile(selectedFile)
       setPhotoPreview(String(reader.result))
     }
-    reader.readAsDataURL(file)
+    reader.readAsDataURL(selectedFile)
   }
 
   const handleStickerUpload = (event: ChangeEvent<HTMLInputElement>) => {
