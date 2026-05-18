@@ -1,6 +1,7 @@
 import type { FormEvent } from 'react'
 import styles from '../App.module.css'
 import type { ThemeMode } from '../types'
+import { ThemeToggle } from './ThemeToggle'
 
 type LoginScreenProps = {
   themeMode: ThemeMode
@@ -16,13 +17,9 @@ export function LoginScreen({ themeMode, authError, authMessage, isAuthLoading, 
   return (
     <main className={`${styles.appShell} ${styles.texture} grid place-items-center px-5 py-10`} data-theme={themeMode}>
       <section className={`${styles.loginCard} w-full max-w-md rounded-[2rem] p-8 text-center`}>
-        <button
-          className={`${styles.buttonGhost} ${styles.themeToggle} mb-6 px-4 py-2 text-sm font-semibold`}
-          type="button"
-          onClick={onToggleTheme}
-        >
-          {themeMode === 'light' ? 'Modo oscuro' : 'Modo claro'}
-        </button>
+        <div className="mb-6 flex justify-center">
+          <ThemeToggle themeMode={themeMode} onToggleTheme={onToggleTheme} />
+        </div>
         <p className={`${styles.eyebrow} mb-3 text-sm uppercase tracking-[0.35em]`}>Love Album</p>
         <h1 className={`${styles.titleFont} ${styles.heading} text-5xl leading-tight`}>Nuestro pequeño museo</h1>
         <p className={`${styles.muted} mt-4`}>Entrá para guardar fotos, mensajes y planes que merecen quedarse.</p>

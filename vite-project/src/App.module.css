@@ -131,7 +131,22 @@
 }
 
 .themeToggle {
-  min-width: 8.8rem;
+  display: inline-grid;
+  min-width: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  padding: 0;
+  color: var(--rose);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.35rem;
+  line-height: 1;
+  transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+
+.themeToggle:hover {
+  transform: translateY(-1px) scale(1.04);
+  box-shadow: 0 12px 24px rgba(124, 41, 64, 0.14);
 }
 
 .eyebrow {

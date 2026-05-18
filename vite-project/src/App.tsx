@@ -7,6 +7,7 @@ import { AlbumView } from './components/AlbumView'
 import { Dashboard } from './components/Dashboard'
 import { DatePlanner } from './components/DatePlanner'
 import { LoginScreen } from './components/LoginScreen'
+import { ThemeToggle } from './components/ThemeToggle'
 import { initialPhotos, initialPlans } from './data'
 import { supabase } from './lib/supabase'
 import {
@@ -642,13 +643,7 @@ function App() {
               {view === 'inicio' ? 'Inicio' : view === 'album' ? 'Álbum' : 'Citas'}
             </button>
           ))}
-          <button
-            className={`${styles.buttonGhost} ${styles.themeToggle} px-4 py-2 text-sm font-semibold`}
-            type="button"
-            onClick={handleToggleTheme}
-          >
-            {themeMode === 'light' ? 'Modo oscuro' : 'Modo claro'}
-          </button>
+          <ThemeToggle themeMode={themeMode} onToggleTheme={handleToggleTheme} />
           <button className={`${styles.buttonGhost} px-4 py-2 text-sm font-semibold`} type="button" onClick={handleLogout}>
             Salir
           </button>

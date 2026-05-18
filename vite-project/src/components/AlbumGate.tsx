@@ -1,6 +1,7 @@
 import type { FormEvent } from 'react'
 import styles from '../App.module.css'
 import type { LoveAlbum, ThemeMode } from '../types'
+import { ThemeToggle } from './ThemeToggle'
 
 type AlbumGateProps = {
   albums: LoveAlbum[]
@@ -43,9 +44,7 @@ export function AlbumGate({
             <p className={`${styles.muted} mt-3`}>Creen un espacio privado de pareja o únanse con el código que les compartieron.</p>
           </div>
           <div className="flex justify-center gap-2">
-            <button className={`${styles.buttonGhost} px-4 py-2 text-sm font-semibold`} type="button" onClick={onToggleTheme}>
-              {themeMode === 'light' ? 'Modo oscuro' : 'Modo claro'}
-            </button>
+            <ThemeToggle themeMode={themeMode} onToggleTheme={onToggleTheme} />
             <button className={`${styles.buttonGhost} px-4 py-2 text-sm font-semibold`} type="button" onClick={onLogout}>
               Salir
             </button>
