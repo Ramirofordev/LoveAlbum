@@ -7,11 +7,12 @@ type LoginScreenProps = {
   authError: string
   authMessage: string
   isAuthLoading: boolean
+  onGoogleLogin: () => void
   onLogin: (event: FormEvent<HTMLFormElement>) => void
   onToggleTheme: () => void
 }
 
-export function LoginScreen({ themeMode, authError, authMessage, isAuthLoading, onLogin, onToggleTheme }: LoginScreenProps) {
+export function LoginScreen({ themeMode, authError, authMessage, isAuthLoading, onGoogleLogin, onLogin, onToggleTheme }: LoginScreenProps) {
   return (
     <main className={`${styles.appShell} ${styles.texture} grid place-items-center px-5 py-10`} data-theme={themeMode}>
       <section className={`${styles.loginCard} w-full max-w-md rounded-[2rem] p-8 text-center`}>
@@ -49,6 +50,15 @@ export function LoginScreen({ themeMode, authError, authMessage, isAuthLoading, 
               Crear cuenta
             </button>
           </div>
+          <div className="flex items-center gap-3 py-1">
+            <span className="h-px flex-1 bg-[var(--line)]" />
+            <span className={`${styles.muted} text-xs uppercase tracking-[0.24em]`}>o</span>
+            <span className="h-px flex-1 bg-[var(--line)]" />
+          </div>
+          <button className={`${styles.buttonGhost} flex w-full items-center justify-center gap-3 px-6 py-3 font-semibold`} type="button" onClick={onGoogleLogin} disabled={isAuthLoading}>
+            <span aria-hidden="true">G</span>
+            Continuar con Google
+          </button>
         </form>
       </section>
     </main>

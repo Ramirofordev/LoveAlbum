@@ -189,6 +189,29 @@ function App() {
     setIsAuthLoading(false)
   }
 
+  const handleGoogleLogin = async () => {
+    if (!supabase) {
+      setAuthError('Supabase no está configurado. Revisá las variables VITE_SUPABASE_URL y VITE_SUPABASE_PUBLISHABLE_KEY.')
+      return
+    }
+
+    setIsAuthLoading(true)
+    setAuthError('')
+    setAuthMessage('')
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+      },
+    })
+
+    if (error) {
+      setAuthError(getAuthErrorMessage(error.message))
+      setIsAuthLoading(false)
+    }
+  }
+
   const handlePhotoUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
 
@@ -463,6 +486,7 @@ function App() {
         authError={authError}
         authMessage={authMessage}
         isAuthLoading={isAuthLoading}
+        onGoogleLogin={handleGoogleLogin}
         onLogin={handleLogin}
         onToggleTheme={handleToggleTheme}
       />
