@@ -1,0 +1,161 @@
+import { useState } from 'react'
+import type { CSSProperties, FormEvent } from 'react'
+import styles from '../App.module.css'
+import { stickerPositionLabels } from '../data'
+import type { Photo, PhotoFormState, StickerPosition } from '../types'
+
+const stickerPositionClasses: Record<StickerPosition, string> = {
+  topRight: styles.stickerTopRight,
+  topLeft: styles.stickerTopLeft,
+  bottomRight: styles.stickerBottomRight,
+  bottomLeft: styles.stickerBottomLeft,
+  center: styles.stickerCenter,
+}
+
+type PhotoCardProps = {
+  photo: Photo
+  onToggleFavorite: (photoId: string) => void
+  onUpdate: (photoId: string, updates: PhotoFormState) => void
+  onDelete: (photoId: string) => void
+}
+
+export function PhotoCard({ photo, onToggleFavorite, onUpdate, onDelete }: PhotoCardProps) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [draft, setDraft] = useState<PhotoFormState>({
+    description: photo.description,
+    caption: photo.caption,
+    place: photo.place,
+    date: photo.date,
+    frameColor: photo.frameColor,
+    stickerPosition: photo.stickerPosition ?? 'topRight',
+    isFavorite: photo.isFavorite,
+  })
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    onUpdate(photo.id, draft)
+    setIsEditing(false)
+  }
+
+  const refreshDraft = () => {
+    setDraft({
+      description: photo.description,
+      caption: photo.caption,
+      place: photo.place,
+      date: photo.date,
+      frameColor: photo.frameColor,
+      stickerPosition: photo.stickerPosition ?? 'topRight',
+      isFavorite: photo.isFavorite,
+    })
+  }
+
+  const handleStartEditing = () => {
+    refreshDraft()
+    setIsEditing(true)
+  }
+
+  const handleCancelEditing = () => {
+    refreshDraft()
+    setIsEditing(false)
+  }
+
+  const handleDelete = () => {
+    if (window.confirm('¿Seguro que querés borrar esta foto? Esta acción no se puede deshacer.')) {
+      onDelete(photo.id)
+    }
+  }
+
+  return (
+    <article
+      className={styles.polaroid}
+      style={
+        {
+          '--frame-color': photo.frameColor,
+          '--tilt': photo.tilt,
+        } as CSSProperties
+      }
+    >
+      <img className="h-72 w-full object-cover" src={photo.image} alt={photo.description} />
+      {photo.stickerImage && (
+        <img
+          className={`${styles.sticker} ${stickerPositionClasses[photo.stickerPosition ?? 'topRight']}`}
+          src={photo.stickerImage}
+          alt="Sticker decorativo"
+        />
+      )}
+      <button
+        className={`${styles.favoriteButton} absolute left-3 top-3 rounded-full px-3 py-2 text-sm font-bold shadow-sm`}
+        type="button"
+        onClick={() => onToggleFavorite(photo.id)}
+        aria-label={photo.isFavorite ? 'Quitar de favoritas' : 'Marcar como favorita'}
+      >
+        {photo.isFavorite ? '♡ Favorita' : '♡'}
+      </button>
+      <div className="absolute right-3 top-3 flex gap-2">
+        <button className={`${styles.buttonGhost} px-3 py-2 text-xs font-semibold`} type="button" onClick={handleStartEditing}>
+          Editar
+        </button>
+        <button className={`${styles.buttonGhost} px-3 py-2 text-xs font-semibold`} type="button" onClick={handleDelete}>
+          Borrar
+        </button>
+      </div>
+      <span className={styles.polaroidNote}>{photo.caption}</span>
+      <div className="mt-4 px-1 pb-2 text-left">
+        {isEditing ? (
+          <form className="grid gap-3" onSubmit={handleSubmit}>
+            <input className={styles.input} value={draft.place} onChange={(event) => setDraft({ ...draft, place: event.target.value })} />
+            <input className={styles.input} type="date" value={draft.date} onChange={(event) => setDraft({ ...draft, date: event.target.value })} />
+            <textarea className={styles.input} value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} required />
+            <textarea className={styles.input} value={draft.caption} onChange={(event) => setDraft({ ...draft, caption: event.target.value })} required />
+            <label className={`${styles.labelText} text-sm font-semibold`}>
+              Color
+              <input
+                className="ml-3 h-10 w-16 rounded-xl border-0 bg-transparent align-middle"
+                type="color"
+                value={draft.frameColor}
+                onChange={(event) => setDraft({ ...draft, frameColor: event.target.value })}
+              />
+            </label>
+            {photo.stickerImage && (
+              <select
+                className={styles.input}
+                value={draft.stickerPosition}
+                onChange={(event) => setDraft({ ...draft, stickerPosition: event.target.value as StickerPosition })}
+              >
+                {Object.entries(stickerPositionLabels).map(([position, label]) => (
+                  <option key={position} value={position}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            )}
+            <label className={`${styles.labelText} flex items-center gap-2 text-sm font-semibold`}>
+              <input
+                className="h-5 w-5 accent-[var(--rose)]"
+                type="checkbox"
+                checked={draft.isFavorite}
+                onChange={(event) => setDraft({ ...draft, isFavorite: event.target.checked })}
+              />
+              Favorita
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <button className={`${styles.buttonPrimary} px-4 py-2 text-sm font-semibold`} type="submit">
+                Guardar
+              </button>
+              <button className={`${styles.buttonGhost} px-4 py-2 text-sm font-semibold`} type="button" onClick={handleCancelEditing}>
+                Cancelar
+              </button>
+            </div>
+          </form>
+        ) : (
+          <>
+            <h3 className={`${styles.heading} font-semibold`}>{photo.place}</h3>
+            <p className={`${styles.muted} text-sm`}>
+              {photo.date || 'Sin fecha'} · {photo.description}
+            </p>
+          </>
+        )}
+      </div>
+    </article>
+  )
+}
