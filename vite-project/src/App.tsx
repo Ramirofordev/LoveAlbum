@@ -44,6 +44,7 @@ const defaultPhotoForm: PhotoFormState = {
   date: '',
   frameColor: '#fffaf4',
   stickerPosition: 'topRight',
+  stickerSize: 'medium',
   isFavorite: false,
 }
 
@@ -143,9 +144,15 @@ function App() {
   useEffect(() => {
     if (!supabase || !user) return
 
-    setIsAlbumLoading(true)
-    fetchAlbums()
-      .then((remoteAlbums) => {
+    let shouldUpdate = true
+
+    void Promise.resolve().then(async () => {
+      setIsAlbumLoading(true)
+
+      try {
+        const remoteAlbums = await fetchAlbums()
+        if (!shouldUpdate) return
+
         const storedAlbumId = readStoredAlbumId(user.id)
         const storedAlbum = remoteAlbums.find((album) => album.id === storedAlbumId)
 
@@ -155,11 +162,17 @@ function App() {
           return stillAvailableAlbum ?? storedAlbum ?? remoteAlbums[0] ?? null
         })
         setAlbumError('')
-      })
-      .catch((error) => {
+      } catch (error) {
+        if (!shouldUpdate) return
         setAlbumError(error instanceof Error ? error.message : 'No se pudieron cargar tus álbumes.')
-      })
-      .finally(() => setIsAlbumLoading(false))
+      } finally {
+        if (shouldUpdate) setIsAlbumLoading(false)
+      }
+    })
+
+    return () => {
+      shouldUpdate = false
+    }
   }, [user])
 
   useEffect(() => {
@@ -406,6 +419,7 @@ function App() {
           image: photoPreview,
           stickerImage: stickerPreview,
           stickerPosition: stickerPreview ? photoForm.stickerPosition : undefined,
+          stickerSize: stickerPreview ? photoForm.stickerSize : undefined,
           isFavorite: photoForm.isFavorite,
           description: photoForm.description,
           caption: photoForm.caption,
@@ -471,6 +485,7 @@ function App() {
           date: photo.date,
           frameColor: photo.frameColor,
           stickerPosition: photo.stickerPosition ?? 'topRight',
+          stickerSize: photo.stickerSize ?? 'medium',
           isFavorite: !photo.isFavorite,
         })
       } catch (error) {
@@ -506,6 +521,7 @@ function App() {
               frameColor: updates.frameColor,
               isFavorite: updates.isFavorite,
               stickerPosition: photo.stickerImage ? updates.stickerPosition : undefined,
+              stickerSize: photo.stickerImage ? updates.stickerSize : undefined,
             }
           : photo,
       ),

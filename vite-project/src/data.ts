@@ -1,4 +1,4 @@
-import type { DatePlan, DatePlanStatus, Photo, StickerPosition } from './types'
+import type { DatePlan, DatePlanStatus, Photo, StickerPosition, StickerSize } from './types'
 
 export const initialPhotos: Photo[] = [
   {
@@ -57,6 +57,12 @@ export const statusLabels: Record<DatePlanStatus, string> = {
 export const stickerPositionLabels: Record<StickerPosition, string> = {
   topRight: 'Arriba derecha',
   topLeft: 'Arriba izquierda',
+}
+
+export const stickerSizeLabels: Record<StickerSize, string> = {
+  small: 'Pequeño',
+  medium: 'Mediano',
+  large: 'Grande',
 }
 
 export const photoFilterLabels = {

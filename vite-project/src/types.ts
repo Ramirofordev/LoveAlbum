@@ -1,4 +1,5 @@
 export type StickerPosition = 'topRight' | 'topLeft'
+export type StickerSize = 'small' | 'medium' | 'large'
 
 export type Photo = {
   id: string
@@ -7,6 +8,7 @@ export type Photo = {
   stickerImage?: string
   stickerPath?: string
   stickerPosition?: StickerPosition
+  stickerSize?: StickerSize
   isFavorite: boolean
   description: string
   caption: string
@@ -45,6 +47,7 @@ export type PhotoFormState = {
   date: string
   frameColor: string
   stickerPosition: StickerPosition
+  stickerSize: StickerSize
   isFavorite: boolean
 }
 

@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase'
-import type { DatePlan, LoveAlbum, Photo, PhotoFormState, PlanFormState, StickerPosition } from '../types'
+import type { DatePlan, LoveAlbum, Photo, PhotoFormState, PlanFormState, StickerPosition, StickerSize } from '../types'
 import { createId, normalizeSafeUrl } from '../utils'
 
 type LoveAlbumRow = {
@@ -13,6 +13,7 @@ type LovePhotoRow = {
   image_path: string
   sticker_path: string | null
   sticker_position: StickerPosition | null
+  sticker_size: StickerSize | null
   is_favorite: boolean
   description: string
   caption: string
@@ -68,7 +69,7 @@ export async function fetchPhotos(albumId: string): Promise<Photo[]> {
 
   const { data, error } = await supabase
     .from('love_photos')
-    .select('id, image_path, sticker_path, sticker_position, is_favorite, description, caption, place, photo_date, frame_color, tilt')
+    .select('id, image_path, sticker_path, sticker_position, sticker_size, is_favorite, description, caption, place, photo_date, frame_color, tilt')
     .eq('album_id', albumId)
     .order('created_at', { ascending: false })
 
@@ -120,6 +121,7 @@ export async function createPhoto(albumId: string, photoFile: File, stickerFile:
     image_path: imagePath,
     sticker_path: stickerPath,
     sticker_position: stickerPath ? form.stickerPosition : null,
+    sticker_size: stickerPath ? form.stickerSize : null,
     is_favorite: form.isFavorite,
     description: form.description,
     caption: form.caption,
@@ -148,6 +150,7 @@ export async function updatePhoto(photoId: string, updates: PhotoFormState) {
       frame_color: updates.frameColor,
       is_favorite: updates.isFavorite,
       sticker_position: updates.stickerPosition,
+      sticker_size: updates.stickerSize,
     })
     .eq('id', photoId)
 
@@ -241,6 +244,7 @@ async function mapPhotoRow(row: LovePhotoRow): Promise<Photo> {
     stickerImage,
     stickerPath: row.sticker_path ?? undefined,
     stickerPosition: row.sticker_position ?? undefined,
+    stickerSize: row.sticker_size ?? undefined,
     isFavorite: row.is_favorite,
     description: row.description,
     caption: row.caption,

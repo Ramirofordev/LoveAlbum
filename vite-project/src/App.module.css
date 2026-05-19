@@ -82,7 +82,7 @@
   position: relative;
   transform: rotate(var(--tilt));
   border: var(--frame-width, 12px) solid var(--frame-color, var(--polaroid-paper));
-  border-bottom-width: calc(var(--frame-width, 12px) + 34px);
+  border-bottom-width: var(--frame-width, 12px);
   background: var(--polaroid-paper);
   box-shadow: 0 20px 45px rgba(78, 38, 48, 0.2);
   transition: transform 200ms ease, box-shadow 200ms ease;
@@ -94,23 +94,37 @@
 }
 
 .polaroidNote {
-  position: absolute;
-  right: 1rem;
-  bottom: -2.7rem;
-  left: 1rem;
-  color: var(--rose-dark);
+  margin-top: 0.85rem;
+  border-radius: 1.2rem;
+  background: color-mix(in srgb, var(--frame-color, var(--polaroid-paper)) 72%, #ffffff 28%);
+  color: #5b2938;
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: 0.92rem;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  padding: 0.85rem 1rem;
   text-align: center;
 }
 
 .sticker {
   position: absolute;
-  width: 5rem;
-  height: 5rem;
   object-fit: contain;
   filter: drop-shadow(0 12px 16px rgba(78, 38, 48, 0.25));
   pointer-events: none;
+}
+
+.stickerSmall {
+  width: 3.8rem;
+  height: 3.8rem;
+}
+
+.stickerMedium {
+  width: 5rem;
+  height: 5rem;
+}
+
+.stickerLarge {
+  width: 6.4rem;
+  height: 6.4rem;
 }
 
 .stickerTopRight {
@@ -175,6 +189,41 @@
 
 .softCardAlt {
   background: var(--panel-softer);
+}
+
+.collageHero {
+  position: relative;
+  min-height: 24rem;
+}
+
+.collageHero::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--panel) 92%, transparent), color-mix(in srgb, var(--panel) 62%, transparent)),
+    radial-gradient(circle at 78% 18%, rgba(255, 250, 244, 0.34), transparent 16rem);
+}
+
+.collageLayer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.collagePhoto {
+  position: absolute;
+  right: calc(2rem + (var(--collage-index) * 3.7rem));
+  bottom: calc(1.5rem + (var(--collage-index) * 0.75rem));
+  width: clamp(8rem, 16vw, 14rem);
+  height: clamp(10rem, 19vw, 17rem);
+  border: 8px solid var(--polaroid-paper);
+  border-bottom-width: 28px;
+  border-radius: 1.3rem;
+  object-fit: cover;
+  opacity: 0.58;
+  box-shadow: 0 22px 44px rgba(78, 38, 48, 0.22);
+  transform: rotate(calc(-10deg + (var(--collage-index) * 6deg)));
 }
 
 .activityItem {

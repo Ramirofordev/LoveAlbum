@@ -1,4 +1,5 @@
 import styles from '../App.module.css'
+import type { CSSProperties } from 'react'
 import type { DatePlan, Photo } from '../types'
 
 type DashboardProps = {
@@ -10,10 +11,23 @@ type DashboardProps = {
 }
 
 export function Dashboard({ photos, plans, favoritePhotos, favoritePlans, upcomingPendingPlans }: DashboardProps) {
+  const collagePhotos = favoritePhotos.length > 0 ? favoritePhotos.slice(0, 5) : photos.slice(0, 5)
+
   return (
     <>
-      <section className={`${styles.heroPanel} mx-auto mt-6 max-w-7xl rounded-[2rem] p-6 md:p-10`}>
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+      <section className={`${styles.heroPanel} ${styles.collageHero} mx-auto mt-6 max-w-7xl overflow-hidden rounded-[2rem] p-6 md:p-10`}>
+        <div className={styles.collageLayer} aria-hidden="true">
+          {collagePhotos.map((photo, index) => (
+            <img
+              className={styles.collagePhoto}
+              src={photo.image}
+              alt=""
+              key={photo.id}
+              style={{ '--collage-index': index } as CSSProperties}
+            />
+          ))}
+        </div>
+        <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
             <p className={`${styles.eyebrow} mb-3 text-sm uppercase tracking-[0.35em]`}>Álbum privado</p>
             <h1 className={`${styles.titleFont} ${styles.heading} text-5xl leading-none md:text-7xl`}>

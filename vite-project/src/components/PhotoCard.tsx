@@ -1,12 +1,18 @@
 import { useState } from 'react'
 import type { CSSProperties, FormEvent } from 'react'
 import styles from '../App.module.css'
-import { stickerPositionLabels } from '../data'
-import type { Photo, PhotoFormState, StickerPosition } from '../types'
+import { stickerPositionLabels, stickerSizeLabels } from '../data'
+import type { Photo, PhotoFormState, StickerPosition, StickerSize } from '../types'
 
 const stickerPositionClasses: Record<StickerPosition, string> = {
   topRight: styles.stickerTopRight,
   topLeft: styles.stickerTopLeft,
+}
+
+const stickerSizeClasses: Record<StickerSize, string> = {
+  small: styles.stickerSmall,
+  medium: styles.stickerMedium,
+  large: styles.stickerLarge,
 }
 
 type PhotoCardProps = {
@@ -25,6 +31,7 @@ export function PhotoCard({ photo, onToggleFavorite, onUpdate, onDelete }: Photo
     date: photo.date,
     frameColor: photo.frameColor,
     stickerPosition: photo.stickerPosition ?? 'topRight',
+    stickerSize: photo.stickerSize ?? 'medium',
     isFavorite: photo.isFavorite,
   })
 
@@ -42,6 +49,7 @@ export function PhotoCard({ photo, onToggleFavorite, onUpdate, onDelete }: Photo
       date: photo.date,
       frameColor: photo.frameColor,
       stickerPosition: photo.stickerPosition ?? 'topRight',
+      stickerSize: photo.stickerSize ?? 'medium',
       isFavorite: photo.isFavorite,
     })
   }
@@ -75,7 +83,7 @@ export function PhotoCard({ photo, onToggleFavorite, onUpdate, onDelete }: Photo
       <img className="h-72 w-full object-cover" src={photo.image} alt={photo.description} />
       {photo.stickerImage && (
         <img
-          className={`${styles.sticker} ${stickerPositionClasses[photo.stickerPosition ?? 'topRight']}`}
+          className={`${styles.sticker} ${stickerPositionClasses[photo.stickerPosition ?? 'topRight']} ${stickerSizeClasses[photo.stickerSize ?? 'medium']}`}
           src={photo.stickerImage}
           alt="Sticker decorativo"
         />
@@ -96,8 +104,8 @@ export function PhotoCard({ photo, onToggleFavorite, onUpdate, onDelete }: Photo
           Borrar
         </button>
       </div>
-      <span className={styles.polaroidNote}>{photo.caption}</span>
-      <div className="mt-4 px-1 pb-2 text-left">
+      <div className={styles.polaroidNote}>{photo.caption}</div>
+      <div className="mt-5 px-1 pb-2 text-left">
         {isEditing ? (
           <form className="grid gap-3" onSubmit={handleSubmit}>
             <input className={styles.input} value={draft.place} onChange={(event) => setDraft({ ...draft, place: event.target.value })} />
@@ -114,17 +122,30 @@ export function PhotoCard({ photo, onToggleFavorite, onUpdate, onDelete }: Photo
               />
             </label>
             {photo.stickerImage && (
-              <select
-                className={styles.input}
-                value={draft.stickerPosition}
-                onChange={(event) => setDraft({ ...draft, stickerPosition: event.target.value as StickerPosition })}
-              >
-                {Object.entries(stickerPositionLabels).map(([position, label]) => (
-                  <option key={position} value={position}>
-                    {label}
-                  </option>
-                ))}
-              </select>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <select
+                  className={styles.input}
+                  value={draft.stickerPosition}
+                  onChange={(event) => setDraft({ ...draft, stickerPosition: event.target.value as StickerPosition })}
+                >
+                  {Object.entries(stickerPositionLabels).map(([position, label]) => (
+                    <option key={position} value={position}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  className={styles.input}
+                  value={draft.stickerSize}
+                  onChange={(event) => setDraft({ ...draft, stickerSize: event.target.value as StickerSize })}
+                >
+                  {Object.entries(stickerSizeLabels).map(([size, label]) => (
+                    <option key={size} value={size}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             )}
             <label className={`${styles.labelText} flex items-center gap-2 text-sm font-semibold`}>
               <input

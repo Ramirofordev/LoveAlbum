@@ -7,6 +7,7 @@ export const maxOptimizedPhotoSide = 1920
 
 const validStatuses = new Set(['pendiente', 'hecha', 'favorita'])
 const validStickerPositions = new Set(['topRight', 'topLeft'])
+const validStickerSizes = new Set(['small', 'medium', 'large'])
 
 export const todayIsoDate = () => new Date().toISOString().slice(0, 10)
 
@@ -113,6 +114,12 @@ const normalizePhoto = (photo: Photo): Photo => ({
       : photo.stickerImage
         ? 'topRight'
         : undefined,
+  stickerSize:
+    photo.stickerSize && validStickerSizes.has(photo.stickerSize)
+      ? photo.stickerSize
+      : photo.stickerImage
+        ? 'medium'
+        : undefined,
 })
 
 const readStoredArray = <T>(key: string, fallback: T[], isValidItem: (item: unknown) => item is T): T[] => {
@@ -150,7 +157,8 @@ const isPhoto = (value: unknown): value is Photo => {
     isString(photo.frameColor) &&
     isString(photo.tilt) &&
     typeof photo.isFavorite === 'boolean' &&
-    (photo.stickerImage === undefined || isString(photo.stickerImage))
+    (photo.stickerImage === undefined || isString(photo.stickerImage)) &&
+    (photo.stickerSize === undefined || validStickerSizes.has(photo.stickerSize))
   )
 }
 

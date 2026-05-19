@@ -1,7 +1,7 @@
 import type { ChangeEvent, FormEvent, RefObject } from 'react'
 import styles from '../App.module.css'
-import { stickerPositionLabels } from '../data'
-import type { PhotoFormState, StickerPosition } from '../types'
+import { stickerPositionLabels, stickerSizeLabels } from '../data'
+import type { PhotoFormState, StickerPosition, StickerSize } from '../types'
 
 type PhotoFormProps = {
   form: PhotoFormState
@@ -63,23 +63,39 @@ export function PhotoForm({
         {stickerPreview && (
           <div className={`${styles.softCard} ${styles.muted} flex items-center gap-3 rounded-3xl p-3 text-sm`}>
             <img className="h-14 w-14 rounded-2xl object-contain" src={stickerPreview} alt="Sticker elegido" />
-            Sticker listo para pegar: {stickerPositionLabels[form.stickerPosition]}.
+            Sticker listo para pegar: {stickerPositionLabels[form.stickerPosition]}, tamaño {stickerSizeLabels[form.stickerSize].toLowerCase()}.
           </div>
         )}
-        <label className={`${styles.labelText} block text-sm font-semibold`}>
-          Posición del sticker
-          <select
-            className={`${styles.input} mt-2`}
-            value={form.stickerPosition}
-            onChange={(event) => onChange({ ...form, stickerPosition: event.target.value as StickerPosition })}
-          >
-            {Object.entries(stickerPositionLabels).map(([position, label]) => (
-              <option key={position} value={position}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className={`${styles.labelText} block text-sm font-semibold`}>
+            Posición del sticker
+            <select
+              className={`${styles.input} mt-2`}
+              value={form.stickerPosition}
+              onChange={(event) => onChange({ ...form, stickerPosition: event.target.value as StickerPosition })}
+            >
+              {Object.entries(stickerPositionLabels).map(([position, label]) => (
+                <option key={position} value={position}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={`${styles.labelText} block text-sm font-semibold`}>
+            Tamaño del sticker
+            <select
+              className={`${styles.input} mt-2`}
+              value={form.stickerSize}
+              onChange={(event) => onChange({ ...form, stickerSize: event.target.value as StickerSize })}
+            >
+              {Object.entries(stickerSizeLabels).map(([size, label]) => (
+                <option key={size} value={size}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
         <label className={`${styles.labelText} block text-sm font-semibold`}>
           Lugar
           <input
