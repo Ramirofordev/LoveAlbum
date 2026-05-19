@@ -784,7 +784,7 @@ function App() {
               {view === 'inicio' ? 'Inicio' : view === 'album' ? 'Álbum' : view === 'citas' ? 'Citas' : 'Perfil'}
             </button>
           ))}
-          {isNavOpen && <ThemeToggle themeMode={themeMode} onToggleTheme={handleToggleTheme} />}
+          <ThemeToggle themeMode={themeMode} onToggleTheme={handleToggleTheme} />
           {isNavOpen && (
             <button className={`${styles.buttonGhost} px-4 py-2 text-sm font-semibold`} type="button" onClick={handleLogout}>
               Salir

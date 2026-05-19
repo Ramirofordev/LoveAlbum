@@ -70,6 +70,12 @@
   color: var(--rose-dark);
 }
 
+[data-theme='dark'] .navToggleText,
+[data-theme='dark'] .navButton,
+[data-theme='dark'] .buttonGhost {
+  color: var(--ink);
+}
+
 .navButton {
   border: 0;
   border-radius: 999px;
@@ -86,6 +92,10 @@
 .navButtonActive {
   background: linear-gradient(135deg, var(--rose-dark), var(--rose));
   color: #fffaf4;
+}
+
+[data-theme='dark'] .navButtonActive {
+  color: #1b1117;
 }
 
 .input {
@@ -283,4 +293,36 @@
     linear-gradient(var(--texture-line) 1px, transparent 1px),
     linear-gradient(90deg, var(--texture-line-soft) 1px, transparent 1px);
   background-size: 38px 38px;
+}
+
+@media (max-width: 640px) {
+  .navBar {
+    width: 100%;
+    border-radius: 1.6rem;
+  }
+
+  .navBarRetractable {
+    justify-content: space-between;
+  }
+
+  .navToggle {
+    flex: 1 1 auto;
+    justify-content: flex-start;
+    min-width: 0;
+  }
+
+  .navToggleText {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .navButton {
+    flex: 1 1 calc(50% - 0.35rem);
+    text-align: center;
+  }
+
+  .themeToggle {
+    flex: 0 0 2.75rem;
+  }
 }
