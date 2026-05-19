@@ -62,7 +62,7 @@ export const normalizeSafeUrl = (url: string) => {
 export const readStoredPhotos = (fallback: Photo[]) =>
   readStoredArray('loveAlbum.photos', fallback, isPhoto).map(normalizePhoto)
 export const readStoredPlans = (fallback: DatePlan[]) =>
-  readStoredArray('loveAlbum.plans', fallback, isDatePlan)
+  readStoredArray('loveAlbum.plans', fallback, isDatePlan).map(normalizePlan)
 
 export const readStoredTheme = (fallback: ThemeMode): ThemeMode => {
   if (typeof window === 'undefined') return fallback
@@ -120,6 +120,12 @@ const normalizePhoto = (photo: Photo): Photo => ({
       : photo.stickerImage
         ? 'medium'
         : undefined,
+  showOnProfile: Boolean(photo.showOnProfile),
+})
+
+const normalizePlan = (plan: DatePlan): DatePlan => ({
+  ...plan,
+  showOnProfile: Boolean(plan.showOnProfile),
 })
 
 const readStoredArray = <T>(key: string, fallback: T[], isValidItem: (item: unknown) => item is T): T[] => {
@@ -157,6 +163,7 @@ const isPhoto = (value: unknown): value is Photo => {
     isString(photo.frameColor) &&
     isString(photo.tilt) &&
     typeof photo.isFavorite === 'boolean' &&
+    (photo.showOnProfile === undefined || typeof photo.showOnProfile === 'boolean') &&
     (photo.stickerImage === undefined || isString(photo.stickerImage)) &&
     (photo.stickerSize === undefined || validStickerSizes.has(photo.stickerSize))
   )
@@ -175,6 +182,7 @@ const isDatePlan = (value: unknown): value is DatePlan => {
     isString(plan.date) &&
     typeof plan.status === 'string' &&
     validStatuses.has(plan.status) &&
+    (plan.showOnProfile === undefined || typeof plan.showOnProfile === 'boolean') &&
     Array.isArray(plan.activities) &&
     plan.activities.every(isString)
   )

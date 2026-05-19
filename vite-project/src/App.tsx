@@ -7,6 +7,7 @@ import { AlbumView } from './components/AlbumView'
 import { Dashboard } from './components/Dashboard'
 import { DatePlanner } from './components/DatePlanner'
 import { LoginScreen } from './components/LoginScreen'
+import { ProfileView } from './components/ProfileView'
 import { ThemeToggle } from './components/ThemeToggle'
 import { initialPhotos, initialPlans } from './data'
 import { supabase } from './lib/supabase'
@@ -17,13 +18,17 @@ import {
   deletePhoto,
   deletePlan,
   fetchAlbums,
+  fetchAlbumProfile,
   fetchPhotos,
   fetchPlans,
+  fetchUserProfile,
   joinAlbum,
+  saveAlbumProfile,
+  saveUserProfile,
   updatePhoto,
   updatePlan,
 } from './services/loveAlbumService'
-import type { ActiveView, DatePlan, DatePlanStatus, LoveAlbum, Photo, PhotoFilter, PhotoFormState, PlanFilter, PlanFormState, ThemeMode } from './types'
+import type { ActiveView, AlbumProfile, DatePlan, DatePlanStatus, LoveAlbum, Photo, PhotoFilter, PhotoFormState, PlanFilter, PlanFormState, ThemeMode, UserProfile } from './types'
 import {
   createId,
   maxPhotoSizeInBytes,
@@ -46,6 +51,7 @@ const defaultPhotoForm: PhotoFormState = {
   stickerPosition: 'topRight',
   stickerSize: 'medium',
   isFavorite: false,
+  showOnProfile: false,
 }
 
 const defaultPlanForm: PlanFormState = {
@@ -54,6 +60,7 @@ const defaultPlanForm: PlanFormState = {
   description: '',
   date: '',
   status: 'pendiente',
+  showOnProfile: false,
   activities: '',
 }
 
@@ -101,6 +108,8 @@ function App() {
   const [isAlbumLoading, setIsAlbumLoading] = useState(false)
   const [albums, setAlbums] = useState<LoveAlbum[]>([])
   const [currentAlbum, setCurrentAlbum] = useState<LoveAlbum | null>(null)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [albumProfile, setAlbumProfile] = useState<AlbumProfile | null>(null)
   const [albumName, setAlbumName] = useState('')
   const [inviteCode, setInviteCode] = useState('')
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => readStoredTheme('light'))
@@ -184,10 +193,18 @@ function App() {
   useEffect(() => {
     if (!supabase || !user || !currentAlbum) return
 
-    Promise.all([fetchPhotos(currentAlbum.id), fetchPlans(currentAlbum.id)])
-      .then(([remotePhotos, remotePlans]) => {
+    Promise.all([
+      fetchPhotos(currentAlbum.id),
+      fetchPlans(currentAlbum.id),
+      fetchUserProfile(user.id, user.email ?? undefined),
+      fetchAlbumProfile(currentAlbum),
+    ])
+      .then(([remotePhotos, remotePlans, remoteUserProfile, remoteAlbumProfile]) => {
         setPhotos(remotePhotos)
         setPlans(remotePlans)
+        setUserProfile(remoteUserProfile)
+        setAlbumProfile(remoteAlbumProfile)
+        setThemeMode(remoteUserProfile.themeMode)
         setDataError('')
       })
       .catch((error) => {
@@ -421,6 +438,7 @@ function App() {
           stickerPosition: stickerPreview ? photoForm.stickerPosition : undefined,
           stickerSize: stickerPreview ? photoForm.stickerSize : undefined,
           isFavorite: photoForm.isFavorite,
+          showOnProfile: photoForm.showOnProfile,
           description: photoForm.description,
           caption: photoForm.caption,
           place: photoForm.place || 'Sin lugar definido',
@@ -463,6 +481,7 @@ function App() {
           description: planForm.description,
           date: planForm.date,
           status: planForm.status,
+          showOnProfile: planForm.showOnProfile,
           activities: planForm.activities
             .split('\n')
             .map((activity) => activity.trim())
@@ -487,6 +506,7 @@ function App() {
           stickerPosition: photo.stickerPosition ?? 'topRight',
           stickerSize: photo.stickerSize ?? 'medium',
           isFavorite: !photo.isFavorite,
+          showOnProfile: photo.showOnProfile,
         })
       } catch (error) {
         setDataError(error instanceof Error ? error.message : 'No se pudo actualizar la foto favorita.')
@@ -520,6 +540,7 @@ function App() {
               date: updates.date,
               frameColor: updates.frameColor,
               isFavorite: updates.isFavorite,
+              showOnProfile: updates.showOnProfile,
               stickerPosition: photo.stickerImage ? updates.stickerPosition : undefined,
               stickerSize: photo.stickerImage ? updates.stickerSize : undefined,
             }
@@ -562,6 +583,7 @@ function App() {
               description: updates.description,
               date: updates.date,
               status: updates.status,
+              showOnProfile: updates.showOnProfile,
               activities: updates.activities
                 .split('\n')
                 .map((activity) => activity.trim())
@@ -595,6 +617,7 @@ function App() {
           description: plan.description,
           date: plan.date,
           status,
+          showOnProfile: plan.showOnProfile,
           activities: plan.activities.join('\n'),
         })
       } catch (error) {
@@ -611,12 +634,49 @@ function App() {
     setUser(null)
     setAlbums([])
     setCurrentAlbum(null)
+    setUserProfile(null)
+    setAlbumProfile(null)
     setPhotos(readStoredPhotos(initialPhotos))
     setPlans(readStoredPlans(initialPlans))
   }
 
   const handleToggleTheme = () => {
-    setThemeMode((currentTheme) => (currentTheme === 'light' ? 'dark' : 'light'))
+    setThemeMode((currentTheme) => {
+      const nextTheme = currentTheme === 'light' ? 'dark' : 'light'
+      setUserProfile((currentProfile) => (currentProfile ? { ...currentProfile, themeMode: nextTheme } : currentProfile))
+      return nextTheme
+    })
+  }
+
+  const handleSaveUserProfile = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!userProfile) return
+
+    if (supabase && user) {
+      try {
+        const savedProfile = await saveUserProfile(userProfile)
+        setUserProfile(savedProfile)
+        setThemeMode(savedProfile.themeMode)
+        setDataError('')
+      } catch (error) {
+        setDataError(error instanceof Error ? error.message : 'No se pudo guardar tu perfil.')
+      }
+    }
+  }
+
+  const handleSaveAlbumProfile = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!albumProfile) return
+
+    if (supabase && user) {
+      try {
+        const savedProfile = await saveAlbumProfile(albumProfile)
+        setAlbumProfile(savedProfile)
+        setDataError('')
+      } catch (error) {
+        setDataError(error instanceof Error ? error.message : 'No se pudo guardar el perfil del álbum.')
+      }
+    }
   }
 
   if (!user) {
@@ -669,14 +729,14 @@ function App() {
     <main className={`${styles.appShell} ${styles.texture} px-4 py-6 md:px-8`} data-theme={themeMode}>
       <header className="sticky top-4 z-20 mx-auto flex max-w-7xl justify-end">
         <nav className={`${styles.navBar} flex flex-wrap justify-end gap-2 rounded-full p-2`} aria-label="Secciones principales">
-          {(['inicio', 'album', 'citas'] as ActiveView[]).map((view) => (
+          {(['inicio', 'album', 'citas', 'perfil'] as ActiveView[]).map((view) => (
             <button
               className={`${styles.navButton} ${activeView === view ? styles.navButtonActive : ''} px-4 py-2 text-sm font-semibold`}
               key={view}
               type="button"
               onClick={() => setActiveView(view)}
             >
-              {view === 'inicio' ? 'Inicio' : view === 'album' ? 'Álbum' : 'Citas'}
+              {view === 'inicio' ? 'Inicio' : view === 'album' ? 'Álbum' : view === 'citas' ? 'Citas' : 'Perfil'}
             </button>
           ))}
           <ThemeToggle themeMode={themeMode} onToggleTheme={handleToggleTheme} />
@@ -694,19 +754,6 @@ function App() {
           <h1 className={`${styles.heading} mt-1 text-2xl font-semibold`}>{currentAlbum.name}</h1>
           <p className={`${styles.muted} mt-1 text-sm`}>Código para invitar a tu pareja: {currentAlbum.inviteCode}</p>
         </div>
-        {albums.length > 1 && (
-          <select
-            className={styles.input}
-            value={currentAlbum.id}
-            onChange={(event) => setCurrentAlbum(albums.find((album) => album.id === event.target.value) ?? currentAlbum)}
-          >
-            {albums.map((album) => (
-              <option key={album.id} value={album.id}>
-                {album.name}
-              </option>
-            ))}
-          </select>
-        )}
       </section>
 
       {activeView === 'inicio' && (
@@ -757,6 +804,20 @@ function App() {
           onUpdatePlan={handleUpdatePlan}
           onDeletePlan={handleDeletePlan}
           onStatusChange={handlePlanStatusChange}
+        />
+      )}
+
+      {activeView === 'perfil' && userProfile && albumProfile && (
+        <ProfileView
+          userEmail={user.email ?? 'Cuenta sin email visible'}
+          userProfile={userProfile}
+          albumProfile={albumProfile}
+          photos={photos}
+          plans={plans}
+          onUserProfileChange={setUserProfile}
+          onAlbumProfileChange={setAlbumProfile}
+          onSaveUserProfile={handleSaveUserProfile}
+          onSaveAlbumProfile={handleSaveAlbumProfile}
         />
       )}
     </main>

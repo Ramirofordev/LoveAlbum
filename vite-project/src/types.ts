@@ -3,6 +3,7 @@ export type StickerSize = 'small' | 'medium' | 'large'
 
 export type Photo = {
   id: string
+  userId?: string
   image: string
   imagePath?: string
   stickerImage?: string
@@ -10,6 +11,7 @@ export type Photo = {
   stickerPosition?: StickerPosition
   stickerSize?: StickerSize
   isFavorite: boolean
+  showOnProfile: boolean
   description: string
   caption: string
   place: string
@@ -19,7 +21,7 @@ export type Photo = {
 }
 
 export type DatePlanStatus = 'pendiente' | 'hecha' | 'favorita'
-export type ActiveView = 'inicio' | 'album' | 'citas'
+export type ActiveView = 'inicio' | 'album' | 'citas' | 'perfil'
 export type PhotoFilter = 'todas' | 'fecha' | 'lugar'
 export type PlanFilter = 'todas' | DatePlanStatus
 export type ThemeMode = 'light' | 'dark'
@@ -30,13 +32,31 @@ export type LoveAlbum = {
   inviteCode: string
 }
 
+export type UserProfile = {
+  userId: string
+  displayName: string
+  bio: string
+  avatarUrl: string
+  themeMode: ThemeMode
+}
+
+export type AlbumProfile = {
+  albumId: string
+  title: string
+  description: string
+  accentColor: string
+  coverPhotoId: string
+}
+
 export type DatePlan = {
   id: string
+  userId?: string
   place: string
   locationUrl: string
   description: string
   date: string
   status: DatePlanStatus
+  showOnProfile: boolean
   activities: string[]
 }
 
@@ -49,6 +69,7 @@ export type PhotoFormState = {
   stickerPosition: StickerPosition
   stickerSize: StickerSize
   isFavorite: boolean
+  showOnProfile: boolean
 }
 
 export type PlanFormState = {
@@ -57,5 +78,6 @@ export type PlanFormState = {
   description: string
   date: string
   status: DatePlanStatus
+  showOnProfile: boolean
   activities: string
 }

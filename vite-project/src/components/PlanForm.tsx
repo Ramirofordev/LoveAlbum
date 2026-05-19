@@ -76,6 +76,15 @@ export function PlanForm({ form, onChange, onSubmit }: PlanFormProps) {
             required
           />
         </label>
+        <label className={`${styles.softCard} ${styles.labelText} flex items-center gap-3 rounded-3xl p-4 text-sm font-semibold`}>
+          <input
+            className="h-5 w-5 accent-[var(--rose)]"
+            type="checkbox"
+            checked={form.showOnProfile}
+            onChange={(event) => onChange({ ...form, showOnProfile: event.target.checked })}
+          />
+          Mostrar esta cita en mi perfil
+        </label>
         <button className={`${styles.buttonPrimary} px-6 py-3 font-semibold`} type="submit">
           Guardar cita
         </button>

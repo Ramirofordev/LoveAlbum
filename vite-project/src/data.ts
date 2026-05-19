@@ -12,6 +12,7 @@ export const initialPhotos: Photo[] = [
     frameColor: '#fffaf4',
     tilt: '-2deg',
     isFavorite: true,
+    showOnProfile: true,
   },
   {
     id: 'photo-city-walk',
@@ -24,6 +25,7 @@ export const initialPhotos: Photo[] = [
     frameColor: '#f5cbd4',
     tilt: '1.5deg',
     isFavorite: false,
+    showOnProfile: false,
   },
 ]
 
@@ -35,6 +37,7 @@ export const initialPlans: DatePlan[] = [
     description: 'Merienda tranquila, fotos lindas y una caminata sin mirar el reloj.',
     date: '2026-06-01',
     status: 'pendiente',
+    showOnProfile: false,
     activities: ['Reservar una mesa linda', 'Probar un postre nuevo', 'Sacar una polaroid'],
   },
   {
@@ -44,6 +47,7 @@ export const initialPlans: DatePlan[] = [
     description: 'Cena casera, mantas, velas y una lista de películas elegidas por ambos.',
     date: '2026-06-12',
     status: 'favorita',
+    showOnProfile: true,
     activities: ['Preparar pasta', 'Elegir dos películas', 'Hacer pochoclos dulces'],
   },
 ]

@@ -191,6 +191,14 @@
   background: var(--panel-softer);
 }
 
+.profilePortrait {
+  border: 1px solid color-mix(in srgb, var(--profile-accent, var(--rose)) 42%, transparent);
+  background:
+    radial-gradient(circle at 20% 12%, color-mix(in srgb, var(--profile-accent, var(--rose)) 28%, transparent), transparent 16rem),
+    var(--panel-soft);
+  box-shadow: 0 22px 48px color-mix(in srgb, var(--profile-accent, var(--rose)) 18%, transparent);
+}
+
 .collageHero {
   position: relative;
   min-height: 24rem;

@@ -33,6 +33,7 @@ export function PhotoCard({ photo, onToggleFavorite, onUpdate, onDelete }: Photo
     stickerPosition: photo.stickerPosition ?? 'topRight',
     stickerSize: photo.stickerSize ?? 'medium',
     isFavorite: photo.isFavorite,
+    showOnProfile: photo.showOnProfile,
   })
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -51,6 +52,7 @@ export function PhotoCard({ photo, onToggleFavorite, onUpdate, onDelete }: Photo
       stickerPosition: photo.stickerPosition ?? 'topRight',
       stickerSize: photo.stickerSize ?? 'medium',
       isFavorite: photo.isFavorite,
+      showOnProfile: photo.showOnProfile,
     })
   }
 
@@ -156,6 +158,15 @@ export function PhotoCard({ photo, onToggleFavorite, onUpdate, onDelete }: Photo
               />
               Favorita
             </label>
+            <label className={`${styles.labelText} flex items-center gap-2 text-sm font-semibold`}>
+              <input
+                className="h-5 w-5 accent-[var(--rose)]"
+                type="checkbox"
+                checked={draft.showOnProfile}
+                onChange={(event) => setDraft({ ...draft, showOnProfile: event.target.checked })}
+              />
+              Mostrar en mi perfil
+            </label>
             <div className="flex flex-wrap gap-2">
               <button className={`${styles.buttonPrimary} px-4 py-2 text-sm font-semibold`} type="submit">
                 Guardar
@@ -171,6 +182,7 @@ export function PhotoCard({ photo, onToggleFavorite, onUpdate, onDelete }: Photo
             <p className={`${styles.muted} text-sm`}>
               {photo.date || 'Sin fecha'} · {photo.description}
             </p>
+            {photo.showOnProfile && <p className={`${styles.eyebrow} mt-2 text-xs font-semibold`}>Visible en tu perfil</p>}
           </>
         )}
       </div>
