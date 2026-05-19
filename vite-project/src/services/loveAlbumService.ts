@@ -42,6 +42,7 @@ type UserProfileRow = {
   display_name: string
   bio: string
   avatar_url: string
+  avatar_path: string
   theme_mode: ThemeMode
 }
 
@@ -51,6 +52,7 @@ type AlbumProfileRow = {
   description: string
   accent_color: string
   cover_photo_id: string | null
+  cover_image_path: string
 }
 
 const signedUrlTtlInSeconds = 60 * 60
@@ -254,14 +256,14 @@ export async function fetchUserProfile(userId: string, email?: string): Promise<
 
   const { data, error } = await supabase
     .from('love_user_profiles')
-    .select('user_id, display_name, bio, avatar_url, theme_mode')
+    .select('user_id, display_name, bio, avatar_url, avatar_path, theme_mode')
     .eq('user_id', userId)
     .maybeSingle()
 
   if (error) throw error
   if (!data) return getDefaultUserProfile(userId, email)
 
-  return mapUserProfileRow(data as UserProfileRow, email)
+  return await mapUserProfileRow(data as UserProfileRow, email)
 }
 
 export async function saveUserProfile(profile: UserProfile): Promise<UserProfile> {
@@ -274,14 +276,15 @@ export async function saveUserProfile(profile: UserProfile): Promise<UserProfile
       display_name: profile.displayName,
       bio: profile.bio,
       avatar_url: normalizeSafeUrl(profile.avatarUrl),
+      avatar_path: profile.avatarPath,
       theme_mode: profile.themeMode,
       updated_at: new Date().toISOString(),
     })
-    .select('user_id, display_name, bio, avatar_url, theme_mode')
+    .select('user_id, display_name, bio, avatar_url, avatar_path, theme_mode')
     .single()
 
   if (error) throw error
-  return mapUserProfileRow(data as UserProfileRow)
+  return await mapUserProfileRow(data as UserProfileRow)
 }
 
 export async function fetchAlbumProfile(album: LoveAlbum): Promise<AlbumProfile> {
@@ -289,14 +292,14 @@ export async function fetchAlbumProfile(album: LoveAlbum): Promise<AlbumProfile>
 
   const { data, error } = await supabase
     .from('love_album_profiles')
-    .select('album_id, title, description, accent_color, cover_photo_id')
+    .select('album_id, title, description, accent_color, cover_photo_id, cover_image_path')
     .eq('album_id', album.id)
     .maybeSingle()
 
   if (error) throw error
   if (!data) return getDefaultAlbumProfile(album)
 
-  return mapAlbumProfileRow(data as AlbumProfileRow, album)
+  return await mapAlbumProfileRow(data as AlbumProfileRow, album)
 }
 
 export async function saveAlbumProfile(profile: AlbumProfile): Promise<AlbumProfile> {
@@ -310,13 +313,22 @@ export async function saveAlbumProfile(profile: AlbumProfile): Promise<AlbumProf
       description: profile.description,
       accent_color: profile.accentColor,
       cover_photo_id: profile.coverPhotoId || null,
+      cover_image_path: profile.coverImagePath,
       updated_at: new Date().toISOString(),
     })
-    .select('album_id, title, description, accent_color, cover_photo_id')
+    .select('album_id, title, description, accent_color, cover_photo_id, cover_image_path')
     .single()
 
   if (error) throw error
-  return mapAlbumProfileRow(data as AlbumProfileRow)
+  return await mapAlbumProfileRow(data as AlbumProfileRow)
+}
+
+export async function uploadUserProfileImage(albumId: string, userId: string, file: File): Promise<string> {
+  return uploadProfileImage(`${albumId}/profile/user-${userId}.${getPhotoExtension(file)}`, file)
+}
+
+export async function uploadAlbumProfileImage(albumId: string, file: File): Promise<string> {
+  return uploadProfileImage(`${albumId}/profile/album-cover.${getPhotoExtension(file)}`, file)
 }
 
 function mapAlbumRow(row: LoveAlbumRow): LoveAlbum {
@@ -371,6 +383,7 @@ function getDefaultUserProfile(userId: string, email?: string): UserProfile {
     displayName: email?.split('@')[0] ?? 'Mi perfil',
     bio: '',
     avatarUrl: '',
+    avatarPath: '',
     themeMode: 'light',
   }
 }
@@ -382,26 +395,46 @@ function getDefaultAlbumProfile(album: LoveAlbum): AlbumProfile {
     description: '',
     accentColor: '#b85b72',
     coverPhotoId: '',
+    coverImage: '',
+    coverImagePath: '',
   }
 }
 
-function mapUserProfileRow(row: UserProfileRow, email?: string): UserProfile {
+async function createOptionalSignedUrl(path: string) {
+  return path ? createSignedUrl('photos', path) : ''
+}
+
+async function uploadProfileImage(path: string, file: File): Promise<string> {
+  if (!supabase) throw new Error('Supabase no está configurado.')
+  if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
+    throw new Error('Usá una imagen JPG, PNG, WEBP o GIF.')
+  }
+
+  const { error } = await supabase.storage.from('photos').upload(path, file, { upsert: true })
+  if (error) throw error
+  return path
+}
+
+async function mapUserProfileRow(row: UserProfileRow, email?: string): Promise<UserProfile> {
   return {
     userId: row.user_id,
     displayName: row.display_name || email?.split('@')[0] || 'Mi perfil',
     bio: row.bio,
-    avatarUrl: row.avatar_url,
+    avatarUrl: row.avatar_path ? await createOptionalSignedUrl(row.avatar_path) : row.avatar_url,
+    avatarPath: row.avatar_path,
     themeMode: row.theme_mode,
   }
 }
 
-function mapAlbumProfileRow(row: AlbumProfileRow, fallbackAlbum?: LoveAlbum): AlbumProfile {
+async function mapAlbumProfileRow(row: AlbumProfileRow, fallbackAlbum?: LoveAlbum): Promise<AlbumProfile> {
   return {
     albumId: row.album_id,
     title: row.title || fallbackAlbum?.name || 'Nuestro álbum',
     description: row.description,
     accentColor: row.accent_color || '#b85b72',
     coverPhotoId: row.cover_photo_id ?? '',
+    coverImagePath: row.cover_image_path,
+    coverImage: await createOptionalSignedUrl(row.cover_image_path),
   }
 }
 

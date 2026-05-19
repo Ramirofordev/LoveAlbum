@@ -37,6 +37,7 @@ export type UserProfile = {
   displayName: string
   bio: string
   avatarUrl: string
+  avatarPath: string
   themeMode: ThemeMode
 }
 
@@ -46,6 +47,8 @@ export type AlbumProfile = {
   description: string
   accentColor: string
   coverPhotoId: string
+  coverImage: string
+  coverImagePath: string
 }
 
 export type DatePlan = {

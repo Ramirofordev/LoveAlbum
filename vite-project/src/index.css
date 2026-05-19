@@ -77,6 +77,11 @@ select {
   font: inherit;
 }
 
+select option {
+  background: var(--paper);
+  color: var(--ink);
+}
+
 button {
   cursor: pointer;
 }

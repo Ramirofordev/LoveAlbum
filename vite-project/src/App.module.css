@@ -45,6 +45,31 @@
   backdrop-filter: blur(16px);
 }
 
+.navBarRetractable {
+  transition: width 200ms ease, transform 200ms ease;
+}
+
+.navToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.navToggle span:first-child {
+  display: inline-grid;
+  width: 1.7rem;
+  height: 1.7rem;
+  place-items: center;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--rose-dark), var(--rose));
+  color: #fffaf4;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.navToggleText {
+  color: var(--rose-dark);
+}
+
 .navButton {
   border: 0;
   border-radius: 999px;
@@ -71,6 +96,11 @@
   color: var(--ink);
   outline: none;
   padding: 0.85rem 1rem;
+}
+
+.input option {
+  background: var(--paper);
+  color: var(--ink);
 }
 
 .input:focus {

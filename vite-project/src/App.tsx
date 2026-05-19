@@ -25,6 +25,8 @@ import {
   joinAlbum,
   saveAlbumProfile,
   saveUserProfile,
+  uploadAlbumProfileImage,
+  uploadUserProfileImage,
   updatePhoto,
   updatePlan,
 } from './services/loveAlbumService'
@@ -114,6 +116,7 @@ function App() {
   const [inviteCode, setInviteCode] = useState('')
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => readStoredTheme('light'))
   const [activeView, setActiveView] = useState<ActiveView>('inicio')
+  const [isNavOpen, setIsNavOpen] = useState(true)
   const [isPhotoFormOpen, setIsPhotoFormOpen] = useState(false)
   const [isPlanFormOpen, setIsPlanFormOpen] = useState(false)
   const [photoFilter, setPhotoFilter] = useState<PhotoFilter>('todas')
@@ -679,6 +682,38 @@ function App() {
     }
   }
 
+  const handleUserProfileImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file || !userProfile || !currentAlbum) return
+
+    try {
+      const avatarPath = await uploadUserProfileImage(currentAlbum.id, userProfile.userId, file)
+      const savedProfile = await saveUserProfile({ ...userProfile, avatarPath, avatarUrl: '' })
+      setUserProfile(savedProfile)
+      setDataError('')
+    } catch (error) {
+      setDataError(error instanceof Error ? error.message : 'No se pudo subir la foto de perfil.')
+    } finally {
+      event.target.value = ''
+    }
+  }
+
+  const handleAlbumProfileImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file || !albumProfile || !currentAlbum) return
+
+    try {
+      const coverImagePath = await uploadAlbumProfileImage(currentAlbum.id, file)
+      const savedProfile = await saveAlbumProfile({ ...albumProfile, coverImagePath, coverPhotoId: '' })
+      setAlbumProfile(savedProfile)
+      setDataError('')
+    } catch (error) {
+      setDataError(error instanceof Error ? error.message : 'No se pudo subir la portada del álbum.')
+    } finally {
+      event.target.value = ''
+    }
+  }
+
   if (!user) {
     return (
       <LoginScreen
@@ -728,8 +763,18 @@ function App() {
   return (
     <main className={`${styles.appShell} ${styles.texture} px-4 py-6 md:px-8`} data-theme={themeMode}>
       <header className="sticky top-4 z-20 mx-auto flex max-w-7xl justify-end">
-        <nav className={`${styles.navBar} flex flex-wrap justify-end gap-2 rounded-full p-2`} aria-label="Secciones principales">
-          {(['inicio', 'album', 'citas', 'perfil'] as ActiveView[]).map((view) => (
+        <nav className={`${styles.navBar} ${styles.navBarRetractable} flex flex-wrap justify-end gap-2 rounded-full p-2`} aria-label="Secciones principales">
+          <button
+            className={`${styles.navToggle} ${styles.buttonGhost} px-4 py-2 text-sm font-semibold`}
+            type="button"
+            onClick={() => setIsNavOpen((isOpen) => !isOpen)}
+            aria-expanded={isNavOpen}
+            aria-label={isNavOpen ? 'Ocultar navegación' : 'Mostrar navegación'}
+          >
+            <span aria-hidden="true">♡</span>
+            <span className={styles.navToggleText}>Love Album</span>
+          </button>
+          {isNavOpen && (['inicio', 'album', 'citas', 'perfil'] as ActiveView[]).map((view) => (
             <button
               className={`${styles.navButton} ${activeView === view ? styles.navButtonActive : ''} px-4 py-2 text-sm font-semibold`}
               key={view}
@@ -739,10 +784,12 @@ function App() {
               {view === 'inicio' ? 'Inicio' : view === 'album' ? 'Álbum' : view === 'citas' ? 'Citas' : 'Perfil'}
             </button>
           ))}
-          <ThemeToggle themeMode={themeMode} onToggleTheme={handleToggleTheme} />
-          <button className={`${styles.buttonGhost} px-4 py-2 text-sm font-semibold`} type="button" onClick={handleLogout}>
-            Salir
-          </button>
+          {isNavOpen && <ThemeToggle themeMode={themeMode} onToggleTheme={handleToggleTheme} />}
+          {isNavOpen && (
+            <button className={`${styles.buttonGhost} px-4 py-2 text-sm font-semibold`} type="button" onClick={handleLogout}>
+              Salir
+            </button>
+          )}
         </nav>
       </header>
 
@@ -818,6 +865,8 @@ function App() {
           onAlbumProfileChange={setAlbumProfile}
           onSaveUserProfile={handleSaveUserProfile}
           onSaveAlbumProfile={handleSaveAlbumProfile}
+          onUserProfileImageUpload={handleUserProfileImageUpload}
+          onAlbumProfileImageUpload={handleAlbumProfileImageUpload}
         />
       )}
     </main>

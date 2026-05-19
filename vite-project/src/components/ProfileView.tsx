@@ -1,4 +1,4 @@
-import type { FormEvent } from 'react'
+import type { ChangeEvent, FormEvent } from 'react'
 import type { CSSProperties } from 'react'
 import styles from '../App.module.css'
 import type { AlbumProfile, Photo, ThemeMode, UserProfile, DatePlan } from '../types'
@@ -13,6 +13,8 @@ type ProfileViewProps = {
   onAlbumProfileChange: (profile: AlbumProfile) => void
   onSaveUserProfile: (event: FormEvent<HTMLFormElement>) => void
   onSaveAlbumProfile: (event: FormEvent<HTMLFormElement>) => void
+  onUserProfileImageUpload: (event: ChangeEvent<HTMLInputElement>) => void
+  onAlbumProfileImageUpload: (event: ChangeEvent<HTMLInputElement>) => void
 }
 
 export function ProfileView({
@@ -25,10 +27,13 @@ export function ProfileView({
   onAlbumProfileChange,
   onSaveUserProfile,
   onSaveAlbumProfile,
+  onUserProfileImageUpload,
+  onAlbumProfileImageUpload,
 }: ProfileViewProps) {
   const profilePhotos = photos.filter((photo) => photo.showOnProfile && (!photo.userId || photo.userId === userProfile.userId))
   const profilePlans = plans.filter((plan) => plan.showOnProfile && (!plan.userId || plan.userId === userProfile.userId))
   const coverPhoto = photos.find((photo) => photo.id === albumProfile.coverPhotoId) ?? profilePhotos[0] ?? photos[0]
+  const coverImage = albumProfile.coverImage || coverPhoto?.image
 
   return (
     <section className="mx-auto mt-8 grid max-w-7xl gap-8">
@@ -38,8 +43,8 @@ export function ProfileView({
       >
         <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
           <div className={`${styles.profilePortrait} rounded-[2rem] p-4`}>
-            {coverPhoto ? (
-              <img className="h-80 w-full rounded-[1.5rem] object-cover" src={coverPhoto.image} alt={coverPhoto.description} />
+            {coverImage ? (
+              <img className="h-80 w-full rounded-[1.5rem] object-cover" src={coverImage} alt={coverPhoto?.description ?? albumProfile.title} />
             ) : (
               <div className={`${styles.softCard} grid h-80 place-items-center rounded-[1.5rem] text-center`}>
                 <p className={styles.muted}>Elegí una foto de portada cuando tengas recuerdos cargados.</p>
@@ -61,6 +66,9 @@ export function ProfileView({
           <p className={`${styles.eyebrow} text-sm uppercase tracking-[0.25em]`}>Mi perfil</p>
           <h2 className={`${styles.titleFont} ${styles.heading} mt-2 text-3xl`}>Tu carta de presentación</h2>
           <p className={`${styles.muted} mt-2 text-sm`}>{userEmail}</p>
+          {userProfile.avatarUrl && (
+            <img className="mt-5 h-28 w-28 rounded-full object-cover shadow-lg" src={userProfile.avatarUrl} alt={userProfile.displayName} />
+          )}
 
           <div className="mt-6 grid gap-4">
             <label className={`${styles.labelText} block text-sm font-semibold`}>
@@ -81,12 +89,16 @@ export function ProfileView({
               />
             </label>
             <label className={`${styles.labelText} block text-sm font-semibold`}>
-              Avatar por URL
+              Subir foto de perfil
+              <input className={`${styles.input} mt-2`} type="file" accept="image/*" onChange={onUserProfileImageUpload} />
+            </label>
+            <label className={`${styles.labelText} block text-sm font-semibold`}>
+              Avatar por URL opcional
               <input
                 className={`${styles.input} mt-2`}
                 placeholder="https://..."
                 value={userProfile.avatarUrl}
-                onChange={(event) => onUserProfileChange({ ...userProfile, avatarUrl: event.target.value })}
+                onChange={(event) => onUserProfileChange({ ...userProfile, avatarUrl: event.target.value, avatarPath: '' })}
               />
             </label>
             <label className={`${styles.labelText} block text-sm font-semibold`}>
@@ -129,11 +141,15 @@ export function ProfileView({
               />
             </label>
             <label className={`${styles.labelText} block text-sm font-semibold`}>
+              Subir portada del álbum
+              <input className={`${styles.input} mt-2`} type="file" accept="image/*" onChange={onAlbumProfileImageUpload} />
+            </label>
+            <label className={`${styles.labelText} block text-sm font-semibold`}>
               Foto de portada
               <select
                 className={`${styles.input} mt-2`}
                 value={albumProfile.coverPhotoId}
-                onChange={(event) => onAlbumProfileChange({ ...albumProfile, coverPhotoId: event.target.value })}
+                onChange={(event) => onAlbumProfileChange({ ...albumProfile, coverPhotoId: event.target.value, coverImagePath: '', coverImage: '' })}
               >
                 <option value="">Elegir automáticamente</option>
                 {photos.map((photo) => (
