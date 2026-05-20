@@ -3,6 +3,7 @@ import type { CSSProperties, FormEvent } from 'react'
 import styles from '../App.module.css'
 import { stickerPositionLabels, stickerSizeLabels } from '../data'
 import type { Photo, PhotoFormState, StickerPosition, StickerSize } from '../types'
+import { formatDisplayDate } from '../utils'
 
 const stickerPositionClasses: Record<StickerPosition, string> = {
   topRight: styles.stickerTopRight,
@@ -67,7 +68,7 @@ export function PhotoCard({ photo, onToggleFavorite, onUpdate, onDelete }: Photo
   }
 
   const handleDelete = () => {
-    if (window.confirm('¿Seguro que querés borrar esta foto? Esta acción no se puede deshacer.')) {
+    if (window.confirm('¿Seguro que quieres borrar esta foto? Esta acción no se puede deshacer.')) {
       onDelete(photo.id)
     }
   }
@@ -87,7 +88,8 @@ export function PhotoCard({ photo, onToggleFavorite, onUpdate, onDelete }: Photo
         <img
           className={`${styles.sticker} ${stickerPositionClasses[photo.stickerPosition ?? 'topRight']} ${stickerSizeClasses[photo.stickerSize ?? 'medium']}`}
           src={photo.stickerImage}
-          alt="Sticker decorativo"
+          alt=""
+          aria-hidden="true"
         />
       )}
       <button
@@ -110,10 +112,10 @@ export function PhotoCard({ photo, onToggleFavorite, onUpdate, onDelete }: Photo
       <div className="mt-5 px-1 pb-2 text-left">
         {isEditing ? (
           <form className="grid gap-3" onSubmit={handleSubmit}>
-            <input className={styles.input} value={draft.place} onChange={(event) => setDraft({ ...draft, place: event.target.value })} />
-            <input className={styles.input} type="date" value={draft.date} onChange={(event) => setDraft({ ...draft, date: event.target.value })} />
-            <textarea className={styles.input} value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} required />
-            <textarea className={styles.input} value={draft.caption} onChange={(event) => setDraft({ ...draft, caption: event.target.value })} required />
+            <input className={styles.input} aria-label="Lugar de la foto" value={draft.place} onChange={(event) => setDraft({ ...draft, place: event.target.value })} />
+            <input className={styles.input} aria-label="Fecha de la foto" type="date" value={draft.date} onChange={(event) => setDraft({ ...draft, date: event.target.value })} />
+            <textarea className={styles.input} aria-label="Descripción de la foto" value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} required />
+            <textarea className={styles.input} aria-label="Pie de foto amoroso" value={draft.caption} onChange={(event) => setDraft({ ...draft, caption: event.target.value })} required />
             <label className={`${styles.labelText} text-sm font-semibold`}>
               Color
               <input
@@ -127,6 +129,7 @@ export function PhotoCard({ photo, onToggleFavorite, onUpdate, onDelete }: Photo
               <div className="grid gap-3 sm:grid-cols-2">
                 <select
                   className={styles.input}
+                  aria-label="Posición del sticker"
                   value={draft.stickerPosition}
                   onChange={(event) => setDraft({ ...draft, stickerPosition: event.target.value as StickerPosition })}
                 >
@@ -138,6 +141,7 @@ export function PhotoCard({ photo, onToggleFavorite, onUpdate, onDelete }: Photo
                 </select>
                 <select
                   className={styles.input}
+                  aria-label="Tamaño del sticker"
                   value={draft.stickerSize}
                   onChange={(event) => setDraft({ ...draft, stickerSize: event.target.value as StickerSize })}
                 >
@@ -165,7 +169,7 @@ export function PhotoCard({ photo, onToggleFavorite, onUpdate, onDelete }: Photo
                 checked={draft.showOnProfile}
                 onChange={(event) => setDraft({ ...draft, showOnProfile: event.target.checked })}
               />
-              Mostrar en mi perfil
+              Destacar en la portada
             </label>
             <div className="flex flex-wrap gap-2">
               <button className={`${styles.buttonPrimary} px-4 py-2 text-sm font-semibold`} type="submit">
@@ -180,9 +184,9 @@ export function PhotoCard({ photo, onToggleFavorite, onUpdate, onDelete }: Photo
           <>
             <h3 className={`${styles.heading} font-semibold`}>{photo.place}</h3>
             <p className={`${styles.muted} text-sm`}>
-              {photo.date || 'Sin fecha'} · {photo.description}
+              {formatDisplayDate(photo.date)} · {photo.description}
             </p>
-            {photo.showOnProfile && <p className={`${styles.eyebrow} mt-2 text-xs font-semibold`}>Visible en tu perfil</p>}
+            {photo.showOnProfile && <p className={`${styles.eyebrow} mt-2 text-xs font-semibold`}>Destacada en la portada</p>}
           </>
         )}
       </div>

@@ -11,6 +11,21 @@ const validStickerSizes = new Set(['small', 'medium', 'large'])
 
 export const todayIsoDate = () => new Date().toISOString().slice(0, 10)
 
+export const formatDisplayDate = (isoDate: string) => {
+  if (!isoDate) return 'Sin fecha'
+
+  const [year, month, day] = isoDate.split('-').map(Number)
+  const date = year && month && day ? new Date(year, month - 1, day) : new Date(isoDate)
+
+  if (Number.isNaN(date.getTime())) return isoDate
+
+  return new Intl.DateTimeFormat('es-AR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(date)
+}
+
 export const createId = () => crypto.randomUUID()
 
 export async function optimizePhotoFile(file: File): Promise<{ file: File; wasOptimized: boolean }> {

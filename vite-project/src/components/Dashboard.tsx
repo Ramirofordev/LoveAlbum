@@ -1,6 +1,7 @@
 import styles from '../App.module.css'
 import type { CSSProperties } from 'react'
 import type { DatePlan, Photo } from '../types'
+import { formatDisplayDate } from '../utils'
 
 type DashboardProps = {
   photos: Photo[]
@@ -8,9 +9,11 @@ type DashboardProps = {
   favoritePhotos: Photo[]
   favoritePlans: DatePlan[]
   upcomingPendingPlans: DatePlan[]
+  onOpenAlbum: () => void
+  onOpenPlans: () => void
 }
 
-export function Dashboard({ photos, plans, favoritePhotos, favoritePlans, upcomingPendingPlans }: DashboardProps) {
+export function Dashboard({ photos, plans, favoritePhotos, favoritePlans, upcomingPendingPlans, onOpenAlbum, onOpenPlans }: DashboardProps) {
   const collagePhotos = favoritePhotos.length > 0 ? favoritePhotos.slice(0, 5) : photos.slice(0, 5)
 
   return (
@@ -37,6 +40,14 @@ export function Dashboard({ photos, plans, favoritePhotos, favoritePlans, upcomi
               Fotos con mensajes, recuerdos por lugar o fecha, y planes románticos para seguir construyendo capítulos
               juntos.
             </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button className={`${styles.buttonPrimary} px-6 py-3 font-semibold`} type="button" onClick={onOpenAlbum}>
+                Subir una foto
+              </button>
+              <button className={`${styles.buttonGhost} px-6 py-3 font-semibold`} type="button" onClick={onOpenPlans}>
+                Planear una cita
+              </button>
+            </div>
           </div>
 
           <div className={`${styles.labelText} grid grid-cols-3 gap-3 text-center text-sm`}>
@@ -67,7 +78,12 @@ export function Dashboard({ photos, plans, favoritePhotos, favoritePlans, upcomi
                 </article>
               ))
             ) : (
-              <p className={`${styles.muted} text-sm`}>Todavía no marcaste fotos como favoritas.</p>
+              <div className={`${styles.emptyStateCompact} rounded-3xl p-4`}>
+                <p className={`${styles.muted} text-sm`}>Aún no has marcado fotos como favoritas.</p>
+                <button className={`${styles.buttonGhost} mt-3 px-4 py-2 text-sm font-semibold`} type="button" onClick={onOpenAlbum}>
+                  Ir al álbum
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -81,12 +97,17 @@ export function Dashboard({ photos, plans, favoritePhotos, favoritePlans, upcomi
                 <article className={`${styles.softCard} rounded-3xl p-4`} key={plan.id}>
                   <h3 className={`${styles.heading} font-bold`}>{plan.place}</h3>
                   <p className={`${styles.muted} text-sm`}>
-                    {plan.date} · {plan.description}
+                    {formatDisplayDate(plan.date)} · {plan.description}
                   </p>
                 </article>
               ))
             ) : (
-              <p className={`${styles.muted} text-sm`}>No hay citas favoritas aún.</p>
+              <div className={`${styles.emptyStateCompact} rounded-3xl p-4`}>
+                <p className={`${styles.muted} text-sm`}>No hay citas favoritas aún.</p>
+                <button className={`${styles.buttonGhost} mt-3 px-4 py-2 text-sm font-semibold`} type="button" onClick={onOpenPlans}>
+                  Ver citas
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -99,12 +120,17 @@ export function Dashboard({ photos, plans, favoritePhotos, favoritePlans, upcomi
               upcomingPendingPlans.map((plan) => (
                 <article className={`${styles.softCard} rounded-3xl p-4`} key={plan.id}>
                   <h3 className={`${styles.heading} font-bold`}>{plan.place}</h3>
-                  <p className={`${styles.muted} text-sm`}>{plan.date}</p>
+                  <p className={`${styles.muted} text-sm`}>{formatDisplayDate(plan.date)}</p>
                   <p className={`${styles.bodyText} mt-2 text-sm`}>{plan.description}</p>
                 </article>
               ))
             ) : (
-              <p className={`${styles.muted} text-sm`}>No hay citas pendientes próximas.</p>
+              <div className={`${styles.emptyStateCompact} rounded-3xl p-4`}>
+                <p className={`${styles.muted} text-sm`}>No hay citas pendientes próximas.</p>
+                <button className={`${styles.buttonGhost} mt-3 px-4 py-2 text-sm font-semibold`} type="button" onClick={onOpenPlans}>
+                  Crear una cita
+                </button>
+              </div>
             )}
           </div>
         </div>

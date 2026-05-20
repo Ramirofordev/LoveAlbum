@@ -159,10 +159,10 @@ export function PhotoForm({
             checked={form.showOnProfile}
             onChange={(event) => onChange({ ...form, showOnProfile: event.target.checked })}
           />
-          Mostrar esta foto en mi perfil
+          Destacar esta foto en la portada
         </label>
         <button className={`${styles.buttonPrimary} px-6 py-3 font-semibold`} type="submit">
-          Añadir al álbum
+          Agregar al álbum
         </button>
       </div>
     </form>

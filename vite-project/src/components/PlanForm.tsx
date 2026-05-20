@@ -83,7 +83,7 @@ export function PlanForm({ form, onChange, onSubmit }: PlanFormProps) {
             checked={form.showOnProfile}
             onChange={(event) => onChange({ ...form, showOnProfile: event.target.checked })}
           />
-          Mostrar esta cita en mi perfil
+          Destacar esta cita en la portada
         </label>
         <button className={`${styles.buttonPrimary} px-6 py-3 font-semibold`} type="submit">
           Guardar cita

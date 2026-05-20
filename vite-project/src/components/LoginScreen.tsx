@@ -43,7 +43,7 @@ export function LoginScreen({ themeMode, authError, authMessage, isAuthLoading, 
           </div>
           <h1 className={`${styles.titleFont} ${styles.heading} mt-6 text-5xl leading-none md:text-7xl`}>Un museo privado para dos corazones.</h1>
           <p className={`${styles.muted} mt-5 max-w-2xl text-lg`}>
-            Guardá recuerdos, planeá citas y decorá los momentos que merecen quedarse. Love Album está pensado como
+            Guarda recuerdos, planea citas y decora los momentos que merecen quedarse. Love Album está pensado como
             una página íntima para que una pareja construya su propia cápsula de memoria.
           </p>
 
@@ -63,7 +63,7 @@ export function LoginScreen({ themeMode, authError, authMessage, isAuthLoading, 
         </div>
         <p className={`${styles.eyebrow} mb-3 text-sm uppercase tracking-[0.35em]`}>Love Album</p>
         <h1 className={`${styles.titleFont} ${styles.heading} text-5xl leading-tight`}>Nuestro pequeño museo</h1>
-        <p className={`${styles.muted} mt-4`}>Entrá para guardar fotos, mensajes y planes que merecen quedarse.</p>
+        <p className={`${styles.muted} mt-4`}>Entra para guardar fotos, mensajes y planes que merecen quedarse.</p>
 
         <form className="mt-8 space-y-4 text-left" onSubmit={onLogin}>
           <label className={`${styles.labelText} block text-sm font-semibold`}>
@@ -77,7 +77,7 @@ export function LoginScreen({ themeMode, authError, authMessage, isAuthLoading, 
           {authError && <p className={`${styles.eyebrow} text-sm font-semibold`}>{authError}</p>}
           {authMessage && <p className={`${styles.softCard} ${styles.muted} rounded-2xl p-3 text-xs`}>{authMessage}</p>}
           <p className={`${styles.softCard} ${styles.muted} rounded-2xl p-3 text-xs`}>
-            Ahora el acceso usa Supabase Auth. Si creás una cuenta y tu proyecto pide confirmación por email, revisá tu
+            Ahora el acceso usa Supabase Auth. Si creas una cuenta y tu proyecto pide confirmación por correo, revisa tu
             correo antes de entrar.
           </p>
           <div className="grid gap-3 sm:grid-cols-2">

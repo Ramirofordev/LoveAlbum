@@ -31,6 +31,12 @@
   box-shadow: 0 18px 38px rgba(124, 41, 64, 0.34);
 }
 
+.buttonPrimary:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+  transform: none;
+}
+
 .buttonGhost {
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -77,8 +83,10 @@
 }
 
 .navButton {
+  display: block;
+  width: 100%;
   border: 0;
-  border-radius: 999px;
+  border-radius: 1.15rem;
   background: transparent;
   color: var(--rose-dark);
   transition: background 180ms ease, color 180ms ease, transform 180ms ease;
@@ -94,8 +102,80 @@
   color: #fffaf4;
 }
 
+.navGroup {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.navGroupTitle {
+  padding: 0 0.8rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.accountTabs {
+  display: grid;
+  gap: 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 1.35rem;
+  background: var(--panel-softer);
+  padding: 0.35rem;
+}
+
+.accountTab {
+  border: 0;
+  border-radius: 1rem;
+  background: transparent;
+  color: var(--rose-dark);
+  transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.accountTab:not(:disabled):hover {
+  transform: translateY(-1px);
+  background: var(--panel-soft);
+}
+
+.accountTab:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.accountTabActive {
+  background: var(--paper);
+  color: var(--rose-dark);
+  box-shadow: inset 0 0 0 1px var(--line), 0 10px 20px rgba(82, 42, 55, 0.08);
+}
+
+.filterPill {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel-softer);
+  color: var(--rose-dark);
+  transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.filterPill:hover {
+  transform: translateY(-1px);
+  background: var(--panel-soft);
+}
+
+.filterPillActive {
+  background: var(--paper);
+  color: var(--rose-dark);
+  box-shadow: inset 0 0 0 1px var(--rose);
+}
+
 [data-theme='dark'] .navButtonActive {
   color: #1b1117;
+}
+
+[data-theme='dark'] .accountTab,
+[data-theme='dark'] .accountTabActive,
+[data-theme='dark'] .filterPill,
+[data-theme='dark'] .filterPillActive {
+  color: var(--ink);
 }
 
 .input {
@@ -283,6 +363,38 @@
   color: var(--rose);
 }
 
+.emptyState,
+.emptyStateCompact {
+  border: 1px dashed color-mix(in srgb, var(--rose) 42%, transparent);
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--rose) 13%, transparent), transparent 15rem),
+    var(--panel-soft);
+}
+
+.inviteCodeBox {
+  border: 1px solid var(--line);
+  background: var(--panel-softer);
+  color: var(--ink);
+  letter-spacing: 0.12em;
+}
+
+.profileSelectorItem {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 0.85rem;
+  border: 1px solid transparent;
+  background: color-mix(in srgb, var(--paper) 72%, transparent);
+  cursor: pointer;
+  transition: border-color 180ms ease, transform 180ms ease, background 180ms ease;
+}
+
+.profileSelectorItem:hover {
+  transform: translateY(-1px);
+  border-color: var(--line);
+  background: var(--paper);
+}
+
 .texture::before {
   position: fixed;
   inset: 0;
@@ -296,6 +408,14 @@
 }
 
 @media (max-width: 640px) {
+  .appLayout {
+    display: block;
+  }
+
+  .appLayout > header {
+    margin-bottom: 1rem;
+  }
+
   .navBar {
     width: 100%;
     border-radius: 1.6rem;
@@ -318,7 +438,7 @@
   }
 
   .navButton {
-    flex: 1 1 calc(50% - 0.35rem);
+    flex: 1 1 auto;
     text-align: center;
   }
 

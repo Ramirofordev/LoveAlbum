@@ -6,12 +6,13 @@ import type { DatePlan, DatePlanStatus, PlanFormState } from '../types'
 
 type PlanCardProps = {
   plan: DatePlan
+  displayDate: string
   onUpdate: (planId: string, updates: PlanFormState) => void
   onDelete: (planId: string) => void
   onStatusChange: (planId: string, status: DatePlanStatus) => void
 }
 
-export function PlanCard({ plan, onUpdate, onDelete, onStatusChange }: PlanCardProps) {
+export function PlanCard({ plan, displayDate, onUpdate, onDelete, onStatusChange }: PlanCardProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState<PlanFormState>({
     place: plan.place,
@@ -52,7 +53,7 @@ export function PlanCard({ plan, onUpdate, onDelete, onStatusChange }: PlanCardP
   }
 
   const handleDelete = () => {
-    if (window.confirm('¿Seguro que querés borrar esta cita? Esta acción no se puede deshacer.')) {
+    if (window.confirm('¿Seguro que quieres borrar esta cita? Esta acción no se puede deshacer.')) {
       onDelete(plan.id)
     }
   }
@@ -61,11 +62,12 @@ export function PlanCard({ plan, onUpdate, onDelete, onStatusChange }: PlanCardP
     <article className={`${styles.softCard} rounded-[1.5rem] p-5 shadow-sm`}>
       {isEditing ? (
         <form className="grid gap-3" onSubmit={handleSubmit}>
-          <input className={styles.input} value={draft.place} onChange={(event) => setDraft({ ...draft, place: event.target.value })} required />
-          <input className={styles.input} value={draft.locationUrl} onChange={(event) => setDraft({ ...draft, locationUrl: event.target.value })} />
-          <input className={styles.input} type="date" value={draft.date} onChange={(event) => setDraft({ ...draft, date: event.target.value })} required />
+          <input className={styles.input} aria-label="Lugar de la cita" value={draft.place} onChange={(event) => setDraft({ ...draft, place: event.target.value })} required />
+          <input className={styles.input} aria-label="Link de ubicación" value={draft.locationUrl} onChange={(event) => setDraft({ ...draft, locationUrl: event.target.value })} />
+          <input className={styles.input} aria-label="Fecha de la cita" type="date" value={draft.date} onChange={(event) => setDraft({ ...draft, date: event.target.value })} required />
           <select
             className={styles.input}
+            aria-label="Estado de la cita"
             value={draft.status}
             onChange={(event) => setDraft({ ...draft, status: event.target.value as DatePlanStatus })}
           >
@@ -73,8 +75,8 @@ export function PlanCard({ plan, onUpdate, onDelete, onStatusChange }: PlanCardP
             <option value="hecha">Hecha</option>
             <option value="favorita">Favorita</option>
           </select>
-          <textarea className={styles.input} value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} required />
-          <textarea className={styles.input} value={draft.activities} onChange={(event) => setDraft({ ...draft, activities: event.target.value })} required />
+          <textarea className={styles.input} aria-label="Resumen de la cita" value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} required />
+          <textarea className={styles.input} aria-label="Actividades de la cita" value={draft.activities} onChange={(event) => setDraft({ ...draft, activities: event.target.value })} required />
           <label className={`${styles.labelText} flex items-center gap-2 text-sm font-semibold`}>
             <input
               className="h-5 w-5 accent-[var(--rose)]"
@@ -82,7 +84,7 @@ export function PlanCard({ plan, onUpdate, onDelete, onStatusChange }: PlanCardP
               checked={draft.showOnProfile}
               onChange={(event) => setDraft({ ...draft, showOnProfile: event.target.checked })}
             />
-            Mostrar en mi perfil
+            Destacar en la portada
           </label>
           <div className="flex flex-wrap gap-2">
             <button className={`${styles.buttonPrimary} px-4 py-2 text-sm font-semibold`} type="submit">
@@ -98,7 +100,7 @@ export function PlanCard({ plan, onUpdate, onDelete, onStatusChange }: PlanCardP
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
               <h3 className={`${styles.heading} text-xl font-bold`}>{plan.place}</h3>
-              <p className={`${styles.muted} mt-1 text-sm`}>{plan.date}</p>
+              <p className={`${styles.muted} mt-1 text-sm`}>{displayDate}</p>
             </div>
             <div className="flex flex-wrap gap-2 md:justify-end">
               <select
@@ -117,7 +119,7 @@ export function PlanCard({ plan, onUpdate, onDelete, onStatusChange }: PlanCardP
             </div>
           </div>
           <p className={`${styles.bodyText} mt-4`}>{plan.description}</p>
-          {plan.showOnProfile && <p className={`${styles.eyebrow} mt-2 text-xs font-semibold`}>Visible en tu perfil</p>}
+          {plan.showOnProfile && <p className={`${styles.eyebrow} mt-2 text-xs font-semibold`}>Destacada en la portada</p>}
           <ul className={`${styles.labelText} mt-4 grid gap-2 text-sm`}>
             {plan.activities.map((activity, activityIndex) => (
               <li className={`${styles.activityItem} rounded-2xl px-4 py-2`} key={`${activity}-${activityIndex}`}>

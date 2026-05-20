@@ -2,6 +2,7 @@ import type { FormEvent } from 'react'
 import styles from '../App.module.css'
 import { statusLabels } from '../data'
 import type { DatePlan, DatePlanStatus, PlanFilter, PlanFormState } from '../types'
+import { formatDisplayDate } from '../utils'
 import { PlanCard } from './PlanCard'
 import { PlanForm } from './PlanForm'
 
@@ -55,9 +56,10 @@ export function DatePlanner({
           <div className="flex flex-wrap gap-2">
             {(['todas', 'pendiente', 'hecha', 'favorita'] as PlanFilter[]).map((filter) => (
               <button
-                className={`${styles.navButton} ${planFilter === filter ? styles.navButtonActive : ''} px-4 py-2 text-sm font-semibold`}
+                className={`${styles.filterPill} ${planFilter === filter ? styles.filterPillActive : ''} px-4 py-2 text-sm font-semibold`}
                 key={filter}
                 type="button"
+                aria-pressed={planFilter === filter}
                 onClick={() => onFilterChange(filter)}
               >
                 {filter === 'todas' ? 'Todas' : statusLabels[filter]}
@@ -66,17 +68,31 @@ export function DatePlanner({
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4">
-          {plans.map((plan) => (
-            <PlanCard
-              key={plan.id}
-              plan={plan}
-              onUpdate={onUpdatePlan}
-              onDelete={onDeletePlan}
-              onStatusChange={onStatusChange}
-            />
-          ))}
-        </div>
+        {plans.length > 0 ? (
+          <div className="mt-6 grid gap-4">
+            {plans.map((plan) => (
+              <PlanCard
+                key={plan.id}
+                plan={plan}
+                displayDate={formatDisplayDate(plan.date)}
+                onUpdate={onUpdatePlan}
+                onDelete={onDeletePlan}
+                onStatusChange={onStatusChange}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className={`${styles.emptyState} mt-8 rounded-[2rem] p-8 text-center`}>
+            <p className={`${styles.eyebrow} text-sm uppercase tracking-[0.25em]`}>Próxima salida</p>
+            <h3 className={`${styles.titleFont} ${styles.heading} mt-2 text-3xl`}>Aún no hay citas guardadas</h3>
+            <p className={`${styles.muted} mx-auto mt-3 max-w-xl text-sm`}>
+              Guarda una idea simple: lugar, fecha y algunas actividades. Después pueden marcarla como hecha o favorita.
+            </p>
+            <button className={`${styles.buttonPrimary} mt-5 px-6 py-3 font-semibold`} type="button" onClick={onToggleForm} disabled={isPlanFormOpen}>
+              {isPlanFormOpen ? 'Formulario abierto arriba' : 'Crear primera cita'}
+            </button>
+          </div>
+        )}
       </div>
     </section>
   )

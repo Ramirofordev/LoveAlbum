@@ -90,7 +90,7 @@ const writeStoredAlbumId = (userId: string, albumId: string) => {
 
 const getAuthErrorMessage = (message: string) => {
   if (message === 'Invalid login credentials') {
-    return 'No encontramos esa cuenta o la contraseña no coincide. Si todavía no la creaste, usá “Crear cuenta”.'
+    return 'No encontramos esa cuenta o la contraseña no coincide. Si aún no la has creado, usa “Crear cuenta”.'
   }
 
   if (message.toLowerCase().includes('email not confirmed')) {
@@ -117,6 +117,7 @@ function App() {
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => readStoredTheme('light'))
   const [activeView, setActiveView] = useState<ActiveView>('inicio')
   const [isNavOpen, setIsNavOpen] = useState(true)
+  const [inviteCopyMessage, setInviteCopyMessage] = useState('')
   const [isPhotoFormOpen, setIsPhotoFormOpen] = useState(false)
   const [isPlanFormOpen, setIsPlanFormOpen] = useState(false)
   const [photoFilter, setPhotoFilter] = useState<PhotoFilter>('todas')
@@ -279,7 +280,7 @@ function App() {
 
     setUser(data.user ?? null)
     if (intent === 'signup' && !data.session) {
-      setAuthMessage('Cuenta creada. Si Supabase pide confirmación, abrí el email antes de iniciar sesión.')
+      setAuthMessage('Cuenta creada. Si Supabase pide confirmación, abre el correo antes de iniciar sesión.')
     }
     setIsAuthLoading(false)
   }
@@ -354,13 +355,13 @@ function App() {
     if (!file) return
 
     if (!file.type.startsWith('image/')) {
-      setPhotoError('Elegí un archivo de imagen válido.')
+      setPhotoError('Elige un archivo de imagen válido.')
       event.target.value = ''
       return
     }
 
     if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
-      setPhotoError('Usá una imagen JPG, PNG, WEBP o GIF para guardarla en el álbum.')
+      setPhotoError('Usa una imagen JPG, PNG, WEBP o GIF para guardarla en el álbum.')
       event.target.value = ''
       return
     }
@@ -379,7 +380,7 @@ function App() {
     }
 
     if (selectedFile.size > maxPhotoSizeInBytes) {
-      setPhotoError('La imagen sigue siendo muy pesada. Probá con una foto menor a 5 MB o una captura más liviana.')
+      setPhotoError('La imagen sigue siendo muy pesada. Prueba con una foto menor a 5 MB o una captura más liviana.')
       event.target.value = ''
       return
     }
@@ -651,6 +652,33 @@ function App() {
     })
   }
 
+  const handleSelectView = (view: ActiveView) => {
+    setActiveView(view)
+
+    if (typeof window !== 'undefined' && window.innerWidth < 640) {
+      setIsNavOpen(false)
+    }
+  }
+
+  const handleCopyInviteCode = async () => {
+    if (!currentAlbum) return
+
+    try {
+      await navigator.clipboard.writeText(currentAlbum.inviteCode)
+      setInviteCopyMessage('Código copiado')
+    } catch {
+      setInviteCopyMessage('No se pudo copiar. Cópialo manualmente.')
+    }
+  }
+
+  useEffect(() => {
+    if (!inviteCopyMessage) return
+
+    const timeoutId = window.setTimeout(() => setInviteCopyMessage(''), 2500)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [inviteCopyMessage])
+
   const handleSaveUserProfile = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!userProfile) return
@@ -762,113 +790,163 @@ function App() {
 
   return (
     <main className={`${styles.appShell} ${styles.texture} px-4 py-6 md:px-8`} data-theme={themeMode}>
-      <header className="sticky top-4 z-20 mx-auto flex max-w-7xl justify-end">
-        <nav className={`${styles.navBar} ${styles.navBarRetractable} flex flex-wrap justify-end gap-2 rounded-full p-2`} aria-label="Secciones principales">
-          <button
-            className={`${styles.navToggle} ${styles.buttonGhost} px-4 py-2 text-sm font-semibold`}
-            type="button"
-            onClick={() => setIsNavOpen((isOpen) => !isOpen)}
-            aria-expanded={isNavOpen}
-            aria-label={isNavOpen ? 'Ocultar navegación' : 'Mostrar navegación'}
-          >
-            <span aria-hidden="true">♡</span>
-            <span className={styles.navToggleText}>Love Album</span>
-          </button>
-          {isNavOpen && (['inicio', 'album', 'citas', 'perfil'] as ActiveView[]).map((view) => (
-            <button
-              className={`${styles.navButton} ${activeView === view ? styles.navButtonActive : ''} px-4 py-2 text-sm font-semibold`}
-              key={view}
-              type="button"
-              onClick={() => setActiveView(view)}
-            >
-              {view === 'inicio' ? 'Inicio' : view === 'album' ? 'Álbum' : view === 'citas' ? 'Citas' : 'Perfil'}
-            </button>
-          ))}
-          <ThemeToggle themeMode={themeMode} onToggleTheme={handleToggleTheme} />
-          {isNavOpen && (
-            <button className={`${styles.buttonGhost} px-4 py-2 text-sm font-semibold`} type="button" onClick={handleLogout}>
-              Salir
-            </button>
+      <div className={`${styles.appLayout} mx-auto grid max-w-7xl gap-6 lg:grid-cols-[17rem_1fr]`}>
+        <header className="relative z-20">
+          <nav className={`${styles.navBar} ${styles.navBarRetractable} sticky top-4 flex flex-col gap-3 rounded-[2rem] p-3`} aria-label="Secciones principales">
+            <div className="flex items-center gap-2">
+              <button
+                className={`${styles.navToggle} ${styles.buttonGhost} flex-1 px-4 py-2 text-sm font-semibold`}
+                type="button"
+                onClick={() => setIsNavOpen((isOpen) => !isOpen)}
+                aria-expanded={isNavOpen}
+                aria-label={isNavOpen ? 'Ocultar navegación' : 'Mostrar navegación'}
+              >
+                <span aria-hidden="true">♡</span>
+                <span className={styles.navToggleText}>Love Album</span>
+              </button>
+              <ThemeToggle themeMode={themeMode} onToggleTheme={handleToggleTheme} />
+            </div>
+
+            {isNavOpen && (
+              <>
+                <div className={styles.navGroup}>
+                  <p className={`${styles.navGroupTitle} ${styles.eyebrow}`}>Álbum</p>
+                  {(['inicio', 'album', 'citas'] as ActiveView[]).map((view) => (
+                    <button
+                      className={`${styles.navButton} ${activeView === view ? styles.navButtonActive : ''} px-4 py-3 text-left text-sm font-semibold`}
+                      key={view}
+                      type="button"
+                      onClick={() => handleSelectView(view)}
+                    >
+                      {view === 'inicio' ? 'Inicio' : view === 'album' ? 'Álbum' : 'Citas'}
+                    </button>
+                  ))}
+                </div>
+
+                <div className={styles.navGroup}>
+                  <p className={`${styles.navGroupTitle} ${styles.eyebrow}`}>Cuenta</p>
+                  <div className={styles.accountTabs} role="tablist" aria-label="Área de cuenta">
+                    <button
+                      className={`${styles.accountTab} ${activeView === 'perfil' ? styles.accountTabActive : ''} px-4 py-3 text-left text-sm font-semibold`}
+                      type="button"
+                      role="tab"
+                      aria-selected={activeView === 'perfil'}
+                      onClick={() => handleSelectView('perfil')}
+                    >
+                      Perfil
+                    </button>
+                    <button
+                      className={`${styles.accountTab} px-4 py-3 text-left text-sm font-semibold`}
+                      type="button"
+                      role="tab"
+                      aria-disabled="true"
+                      disabled
+                    >
+                      Configuración próximamente
+                    </button>
+                  </div>
+                </div>
+
+                <button className={`${styles.buttonGhost} px-4 py-2 text-sm font-semibold`} type="button" onClick={handleLogout}>
+                  Salir
+                </button>
+              </>
+            )}
+          </nav>
+        </header>
+
+        <div className="min-w-0">
+          {dataError && <p className={`${styles.panel} rounded-3xl p-4 text-sm font-semibold`}>{dataError}</p>}
+
+          <section className={`${styles.panel} flex flex-col gap-3 rounded-[2rem] p-5 md:flex-row md:items-center md:justify-between`}>
+            <div>
+              <p className={`${styles.eyebrow} text-xs uppercase tracking-[0.25em]`}>Álbum activo</p>
+              <h1 className={`${styles.heading} mt-1 text-2xl font-semibold`}>{currentAlbum.name}</h1>
+              <p className={`${styles.muted} mt-1 text-sm`}>Comparte este código para que tu pareja se una al álbum.</p>
+            </div>
+            <div className="flex flex-col gap-2 sm:items-end">
+              <div className={`${styles.inviteCodeBox} rounded-2xl px-4 py-3 text-sm font-semibold`} aria-label={`Código de invitación ${currentAlbum.inviteCode}`}>
+                {currentAlbum.inviteCode}
+              </div>
+              <button className={`${styles.buttonGhost} px-4 py-2 text-sm font-semibold`} type="button" onClick={handleCopyInviteCode}>
+                Copiar código
+              </button>
+              {inviteCopyMessage && <p className={`${styles.eyebrow} text-xs font-semibold`} aria-live="polite">{inviteCopyMessage}</p>}
+            </div>
+          </section>
+
+          {activeView === 'inicio' && (
+            <Dashboard
+              photos={photos}
+              plans={plans}
+              favoritePhotos={favoritePhotos}
+              favoritePlans={favoritePlans}
+              upcomingPendingPlans={upcomingPendingPlans}
+              onOpenAlbum={() => handleSelectView('album')}
+              onOpenPlans={() => handleSelectView('citas')}
+            />
           )}
-        </nav>
-      </header>
 
-      {dataError && <p className={`${styles.panel} mx-auto mt-6 max-w-7xl rounded-3xl p-4 text-sm font-semibold`}>{dataError}</p>}
+          {activeView === 'album' && (
+            <AlbumView
+              groupedPlaces={groupedPlaces}
+              isPhotoFormOpen={isPhotoFormOpen}
+              photoFilter={photoFilter}
+              photos={filteredPhotos}
+              photoForm={photoForm}
+              photoPreview={photoPreview}
+              stickerPreview={stickerPreview}
+              photoError={photoError}
+              stickerError={stickerError}
+              fileInputRef={fileInputRef}
+              stickerInputRef={stickerInputRef}
+              onToggleForm={() => setIsPhotoFormOpen((isOpen) => !isOpen)}
+              onFilterChange={setPhotoFilter}
+              onFormChange={setPhotoForm}
+              onPhotoUpload={handlePhotoUpload}
+              onStickerUpload={handleStickerUpload}
+              onAddPhoto={handleAddPhoto}
+              onTogglePhotoFavorite={handleTogglePhotoFavorite}
+              onUpdatePhoto={handleUpdatePhoto}
+              onDeletePhoto={handleDeletePhoto}
+            />
+          )}
 
-      <section className={`${styles.panel} mx-auto mt-6 flex max-w-7xl flex-col gap-3 rounded-[2rem] p-5 md:flex-row md:items-center md:justify-between`}>
-        <div>
-          <p className={`${styles.eyebrow} text-xs uppercase tracking-[0.25em]`}>Álbum activo</p>
-          <h1 className={`${styles.heading} mt-1 text-2xl font-semibold`}>{currentAlbum.name}</h1>
-          <p className={`${styles.muted} mt-1 text-sm`}>Código para invitar a tu pareja: {currentAlbum.inviteCode}</p>
+          {activeView === 'citas' && (
+            <DatePlanner
+              isPlanFormOpen={isPlanFormOpen}
+              planFilter={planFilter}
+              plans={filteredPlans}
+              planForm={planForm}
+              onToggleForm={() => setIsPlanFormOpen((isOpen) => !isOpen)}
+              onFilterChange={setPlanFilter}
+              onFormChange={setPlanForm}
+              onAddPlan={handleAddPlan}
+              onUpdatePlan={handleUpdatePlan}
+              onDeletePlan={handleDeletePlan}
+              onStatusChange={handlePlanStatusChange}
+            />
+          )}
+
+          {activeView === 'perfil' && userProfile && albumProfile && (
+            <ProfileView
+              userEmail={user.email ?? 'Cuenta sin email visible'}
+              userProfile={userProfile}
+              albumProfile={albumProfile}
+              photos={photos}
+              plans={plans}
+              onUserProfileChange={setUserProfile}
+              onAlbumProfileChange={setAlbumProfile}
+              onSaveUserProfile={handleSaveUserProfile}
+              onSaveAlbumProfile={handleSaveAlbumProfile}
+              onUserProfileImageUpload={handleUserProfileImageUpload}
+              onAlbumProfileImageUpload={handleAlbumProfileImageUpload}
+              onUpdatePhoto={handleUpdatePhoto}
+              onUpdatePlan={handleUpdatePlan}
+            />
+          )}
         </div>
-      </section>
-
-      {activeView === 'inicio' && (
-        <Dashboard
-          photos={photos}
-          plans={plans}
-          favoritePhotos={favoritePhotos}
-          favoritePlans={favoritePlans}
-          upcomingPendingPlans={upcomingPendingPlans}
-        />
-      )}
-
-      {activeView === 'album' && (
-        <AlbumView
-          groupedPlaces={groupedPlaces}
-          isPhotoFormOpen={isPhotoFormOpen}
-          photoFilter={photoFilter}
-          photos={filteredPhotos}
-          photoForm={photoForm}
-          photoPreview={photoPreview}
-          stickerPreview={stickerPreview}
-          photoError={photoError}
-          stickerError={stickerError}
-          fileInputRef={fileInputRef}
-          stickerInputRef={stickerInputRef}
-          onToggleForm={() => setIsPhotoFormOpen((isOpen) => !isOpen)}
-          onFilterChange={setPhotoFilter}
-          onFormChange={setPhotoForm}
-          onPhotoUpload={handlePhotoUpload}
-          onStickerUpload={handleStickerUpload}
-          onAddPhoto={handleAddPhoto}
-          onTogglePhotoFavorite={handleTogglePhotoFavorite}
-          onUpdatePhoto={handleUpdatePhoto}
-          onDeletePhoto={handleDeletePhoto}
-        />
-      )}
-
-      {activeView === 'citas' && (
-        <DatePlanner
-          isPlanFormOpen={isPlanFormOpen}
-          planFilter={planFilter}
-          plans={filteredPlans}
-          planForm={planForm}
-          onToggleForm={() => setIsPlanFormOpen((isOpen) => !isOpen)}
-          onFilterChange={setPlanFilter}
-          onFormChange={setPlanForm}
-          onAddPlan={handleAddPlan}
-          onUpdatePlan={handleUpdatePlan}
-          onDeletePlan={handleDeletePlan}
-          onStatusChange={handlePlanStatusChange}
-        />
-      )}
-
-      {activeView === 'perfil' && userProfile && albumProfile && (
-        <ProfileView
-          userEmail={user.email ?? 'Cuenta sin email visible'}
-          userProfile={userProfile}
-          albumProfile={albumProfile}
-          photos={photos}
-          plans={plans}
-          onUserProfileChange={setUserProfile}
-          onAlbumProfileChange={setAlbumProfile}
-          onSaveUserProfile={handleSaveUserProfile}
-          onSaveAlbumProfile={handleSaveAlbumProfile}
-          onUserProfileImageUpload={handleUserProfileImageUpload}
-          onAlbumProfileImageUpload={handleAlbumProfileImageUpload}
-        />
-      )}
+      </div>
     </main>
   )
 }

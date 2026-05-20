@@ -122,7 +122,7 @@ export async function createPhoto(albumId: string, photoFile: File, stickerFile:
     error: userError,
   } = await supabase.auth.getUser()
   if (userError) throw userError
-  if (!user) throw new Error('Necesitás iniciar sesión para guardar fotos.')
+  if (!user) throw new Error('Necesitas iniciar sesión para guardar fotos.')
 
   const photoId = createId()
   const imagePath = `${albumId}/${photoId}.${getPhotoExtension(photoFile)}`
@@ -199,7 +199,7 @@ export async function createPlan(albumId: string, form: PlanFormState): Promise<
     error: userError,
   } = await supabase.auth.getUser()
   if (userError) throw userError
-  if (!user) throw new Error('Necesitás iniciar sesión para guardar citas.')
+  if (!user) throw new Error('Necesitas iniciar sesión para guardar citas.')
 
   const row = {
     album_id: albumId,
@@ -407,7 +407,7 @@ async function createOptionalSignedUrl(path: string) {
 async function uploadProfileImage(path: string, file: File): Promise<string> {
   if (!supabase) throw new Error('Supabase no está configurado.')
   if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
-    throw new Error('Usá una imagen JPG, PNG, WEBP o GIF.')
+    throw new Error('Usa una imagen JPG, PNG, WEBP o GIF.')
   }
 
   const { error } = await supabase.storage.from('photos').upload(path, file, { upsert: true })

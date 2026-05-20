@@ -40,7 +40,7 @@ export function AlbumGate({
         <div className="flex flex-col gap-3 text-center sm:flex-row sm:items-start sm:justify-between sm:text-left">
           <div>
             <p className={`${styles.eyebrow} text-sm uppercase tracking-[0.35em]`}>Love Album</p>
-            <h1 className={`${styles.titleFont} ${styles.heading} mt-3 text-4xl leading-tight`}>Elegí su álbum compartido</h1>
+            <h1 className={`${styles.titleFont} ${styles.heading} mt-3 text-4xl leading-tight`}>Elige su álbum compartido</h1>
             <p className={`${styles.muted} mt-3`}>Creen un espacio privado de pareja o únanse con el código que les compartieron.</p>
           </div>
           <div className="flex justify-center gap-2">
