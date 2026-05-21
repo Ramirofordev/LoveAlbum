@@ -111,7 +111,7 @@ export function PhotoCard({ photo, onToggleFavorite, onUpdate, onDelete }: Photo
       <div className={styles.polaroidNote}>{photo.caption}</div>
       <div className="mt-5 px-1 pb-2 text-left">
         {isEditing ? (
-          <form className="grid gap-3" onSubmit={handleSubmit}>
+          <form className={`${styles.polaroidEditForm} grid gap-3`} onSubmit={handleSubmit}>
             <input className={styles.input} aria-label="Lugar de la foto" value={draft.place} onChange={(event) => setDraft({ ...draft, place: event.target.value })} />
             <input className={styles.input} aria-label="Fecha de la foto" type="date" value={draft.date} onChange={(event) => setDraft({ ...draft, date: event.target.value })} />
             <textarea className={styles.input} aria-label="Descripción de la foto" value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} required />

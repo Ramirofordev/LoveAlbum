@@ -8,6 +8,7 @@ import { Dashboard } from './components/Dashboard'
 import { DatePlanner } from './components/DatePlanner'
 import { LoginScreen } from './components/LoginScreen'
 import { ProfileView } from './components/ProfileView'
+import { SettingsView } from './components/SettingsView'
 import { ThemeToggle } from './components/ThemeToggle'
 import { initialPhotos, initialPlans } from './data'
 import { supabase } from './lib/supabase'
@@ -100,11 +101,16 @@ const getAuthErrorMessage = (message: string) => {
   return message
 }
 
+const getFormValue = (formData: FormData, key: string) => String(formData.get(key) ?? '').trim()
+
 function App() {
   const [user, setUser] = useState<User | null>(null)
   const [isAuthLoading, setIsAuthLoading] = useState(Boolean(supabase))
   const [authError, setAuthError] = useState('')
   const [authMessage, setAuthMessage] = useState('')
+  const [accountError, setAccountError] = useState('')
+  const [accountMessage, setAccountMessage] = useState('')
+  const [isAccountActionLoading, setIsAccountActionLoading] = useState(false)
   const [dataError, setDataError] = useState('')
   const [albumError, setAlbumError] = useState('')
   const [isAlbumLoading, setIsAlbumLoading] = useState(false)
@@ -644,6 +650,126 @@ function App() {
     setPlans(readStoredPlans(initialPlans))
   }
 
+  const verifyCurrentPassword = async (password: string) => {
+    if (!supabase) throw new Error('Supabase no está configurado.')
+    if (!user?.email) throw new Error('No encontramos un email para verificar esta cuenta.')
+    if (!password) throw new Error('Ingresa tu contraseña actual para verificar que eres tú.')
+
+    const { error } = await supabase.auth.signInWithPassword({ email: user.email, password })
+    if (error) throw new Error('La contraseña actual no coincide.')
+  }
+
+  const handleChangePassword = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!supabase) return
+
+    const formData = new FormData(event.currentTarget)
+    const currentPassword = getFormValue(formData, 'currentPassword')
+    const newPassword = getFormValue(formData, 'newPassword')
+    const confirmPassword = getFormValue(formData, 'confirmPassword')
+
+    setIsAccountActionLoading(true)
+    setAccountError('')
+    setAccountMessage('')
+
+    try {
+      if (newPassword !== confirmPassword) throw new Error('La nueva contraseña y su confirmación no coinciden.')
+      if (newPassword.length < 6) throw new Error('La nueva contraseña debe tener al menos 6 caracteres.')
+
+      await verifyCurrentPassword(currentPassword)
+      const { error } = await supabase.auth.updateUser({ password: newPassword })
+      if (error) throw error
+
+      event.currentTarget.reset()
+      setAccountMessage('Contraseña actualizada correctamente.')
+    } catch (error) {
+      setAccountError(error instanceof Error ? error.message : 'No se pudo actualizar la contraseña.')
+    } finally {
+      setIsAccountActionLoading(false)
+    }
+  }
+
+  const handleChangeEmail = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!supabase) return
+
+    const formData = new FormData(event.currentTarget)
+    const newEmail = getFormValue(formData, 'newEmail')
+    const currentPassword = getFormValue(formData, 'currentPassword')
+
+    setIsAccountActionLoading(true)
+    setAccountError('')
+    setAccountMessage('')
+
+    try {
+      if (!newEmail) throw new Error('Ingresa el nuevo email.')
+      if (currentPassword) await verifyCurrentPassword(currentPassword)
+
+      const { error } = await supabase.auth.updateUser(
+        { email: newEmail },
+        { emailRedirectTo: window.location.origin },
+      )
+      if (error) throw error
+
+      event.currentTarget.reset()
+      setAccountMessage('Te enviamos un correo para confirmar el cambio de email.')
+    } catch (error) {
+      setAccountError(error instanceof Error ? error.message : 'No se pudo iniciar el cambio de email.')
+    } finally {
+      setIsAccountActionLoading(false)
+    }
+  }
+
+  const handleLinkGoogle = async () => {
+    if (!supabase) return
+
+    setIsAccountActionLoading(true)
+    setAccountError('')
+    setAccountMessage('')
+
+    const { error } = await supabase.auth.linkIdentity({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    })
+
+    if (error) {
+      setAccountError(getAuthErrorMessage(error.message))
+      setIsAccountActionLoading(false)
+    }
+  }
+
+  const handleDeleteAccount = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!supabase) return
+
+    const formData = new FormData(event.currentTarget)
+    const currentPassword = getFormValue(formData, 'currentPassword')
+    const confirmation = getFormValue(formData, 'confirmation')
+
+    setIsAccountActionLoading(true)
+    setAccountError('')
+    setAccountMessage('')
+
+    try {
+      if (confirmation !== 'ELIMINAR MI CUENTA') throw new Error('Escribe ELIMINAR MI CUENTA para confirmar.')
+      const accepted = window.confirm('Esta acción eliminará tu cuenta de forma permanente. ¿Quieres continuar?')
+      if (!accepted) return
+
+      if (currentPassword) await verifyCurrentPassword(currentPassword)
+
+      const { error } = await supabase.functions.invoke('delete-account', {
+        body: { confirmation },
+      })
+      if (error) throw error
+
+      await handleLogout()
+    } catch (error) {
+      setAccountError(error instanceof Error ? error.message : 'No se pudo eliminar la cuenta.')
+    } finally {
+      setIsAccountActionLoading(false)
+    }
+  }
+
   const handleToggleTheme = () => {
     setThemeMode((currentTheme) => {
       const nextTheme = currentTheme === 'light' ? 'dark' : 'light'
@@ -836,20 +962,16 @@ function App() {
                       Perfil
                     </button>
                     <button
-                      className={`${styles.accountTab} px-4 py-3 text-left text-sm font-semibold`}
+                      className={`${styles.accountTab} ${activeView === 'configuracion' ? styles.accountTabActive : ''} px-4 py-3 text-left text-sm font-semibold`}
                       type="button"
                       role="tab"
-                      aria-disabled="true"
-                      disabled
+                      aria-selected={activeView === 'configuracion'}
+                      onClick={() => handleSelectView('configuracion')}
                     >
-                      Configuración próximamente
+                      Configuración
                     </button>
                   </div>
                 </div>
-
-                <button className={`${styles.buttonGhost} px-4 py-2 text-sm font-semibold`} type="button" onClick={handleLogout}>
-                  Salir
-                </button>
               </>
             )}
           </nav>
@@ -885,7 +1007,7 @@ function App() {
               upcomingPendingPlans={upcomingPendingPlans}
               onOpenAlbum={() => handleSelectView('album')}
               onOpenPlans={() => handleSelectView('citas')}
-              onOpenProfile={() => handleSelectView('perfil')}
+              onOpenProfile={() => handleSelectView('configuracion')}
             />
           )}
 
@@ -934,9 +1056,22 @@ function App() {
             <ProfileView
               userEmail={user.email ?? 'Cuenta sin email visible'}
               userProfile={userProfile}
+              photos={photos}
+              plans={plans}
+              onOpenSettings={() => handleSelectView('configuracion')}
+            />
+          )}
+
+          {activeView === 'configuracion' && userProfile && albumProfile && (
+            <SettingsView
+              userEmail={user.email ?? 'Cuenta sin email visible'}
+              userProfile={userProfile}
               albumProfile={albumProfile}
               photos={photos}
               plans={plans}
+              accountMessage={accountMessage}
+              accountError={accountError}
+              isAccountActionLoading={isAccountActionLoading}
               onUserProfileChange={setUserProfile}
               onAlbumProfileChange={setAlbumProfile}
               onSaveUserProfile={handleSaveUserProfile}
@@ -945,6 +1080,11 @@ function App() {
               onAlbumProfileImageUpload={handleAlbumProfileImageUpload}
               onUpdatePhoto={handleUpdatePhoto}
               onUpdatePlan={handleUpdatePlan}
+              onChangePassword={handleChangePassword}
+              onChangeEmail={handleChangeEmail}
+              onLinkGoogle={handleLinkGoogle}
+              onDeleteAccount={handleDeleteAccount}
+              onLogout={handleLogout}
             />
           )}
         </div>

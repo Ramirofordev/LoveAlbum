@@ -232,6 +232,26 @@
   text-align: center;
 }
 
+.polaroidEditForm .input {
+  border-color: rgba(124, 41, 64, 0.18);
+  background: rgba(255, 250, 244, 0.88);
+  color: #3e2630;
+}
+
+.polaroidEditForm .input::placeholder {
+  color: rgba(62, 38, 48, 0.58);
+}
+
+.polaroidEditForm .input:focus {
+  border-color: #b85b72;
+  box-shadow: 0 0 0 4px rgba(184, 91, 114, 0.16);
+}
+
+.polaroidEditForm .labelText,
+.polaroidEditForm label {
+  color: #7c2940;
+}
+
 .sticker {
   position: absolute;
   object-fit: contain;
@@ -468,6 +488,51 @@
   color: var(--rose-dark);
 }
 
+.settingsLayout {
+  display: grid;
+  grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
+  gap: 2rem;
+  align-items: start;
+}
+
+.settingsSidebar {
+  position: sticky;
+  top: 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: 1.5rem;
+  background: color-mix(in srgb, var(--panel) 86%, transparent);
+  box-shadow: 0 14px 36px rgba(82, 42, 55, 0.1);
+  padding: 1rem;
+}
+
+.settingsNavItem {
+  display: grid;
+  gap: 0.15rem;
+  width: 100%;
+  border: 0;
+  border-left: 3px solid transparent;
+  border-radius: 1rem;
+  background: transparent;
+  color: var(--ink);
+  padding: 0.85rem 1rem;
+  text-align: left;
+  transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.settingsNavItem small {
+  color: var(--muted);
+}
+
+.settingsNavItem:hover {
+  transform: translateX(2px);
+  background: var(--panel-softer);
+}
+
+.settingsNavItemActive {
+  border-left-color: var(--rose);
+  background: var(--panel-soft);
+}
+
 [data-theme='dark'] .coverBadge,
 [data-theme='dark'] .profileStat,
 [data-theme='dark'] .selectedBadge {
@@ -487,6 +552,14 @@
 }
 
 @media (max-width: 640px) {
+  .settingsLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .settingsSidebar {
+    position: static;
+  }
+
   .appLayout {
     display: block;
   }

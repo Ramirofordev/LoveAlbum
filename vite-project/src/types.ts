@@ -21,7 +21,7 @@ export type Photo = {
 }
 
 export type DatePlanStatus = 'pendiente' | 'hecha' | 'favorita'
-export type ActiveView = 'inicio' | 'album' | 'citas' | 'perfil'
+export type ActiveView = 'inicio' | 'album' | 'citas' | 'perfil' | 'configuracion'
 export type PhotoFilter = 'todas' | 'fecha' | 'lugar'
 export type PlanFilter = 'todas' | DatePlanStatus
 export type ThemeMode = 'light' | 'dark'
