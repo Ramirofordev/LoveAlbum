@@ -875,8 +875,9 @@ function App() {
             </div>
           </section>
 
-          {activeView === 'inicio' && (
+          {activeView === 'inicio' && albumProfile && (
             <Dashboard
+              albumProfile={albumProfile}
               photos={photos}
               plans={plans}
               favoritePhotos={favoritePhotos}
@@ -884,6 +885,7 @@ function App() {
               upcomingPendingPlans={upcomingPendingPlans}
               onOpenAlbum={() => handleSelectView('album')}
               onOpenPlans={() => handleSelectView('citas')}
+              onOpenProfile={() => handleSelectView('perfil')}
             />
           )}
 

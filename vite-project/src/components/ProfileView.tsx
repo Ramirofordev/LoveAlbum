@@ -1,5 +1,5 @@
+import { useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
-import type { CSSProperties } from 'react'
 import styles from '../App.module.css'
 import type { AlbumProfile, Photo, ThemeMode, UserProfile, DatePlan, PhotoFormState, PlanFormState } from '../types'
 import { formatDisplayDate } from '../utils'
@@ -35,10 +35,10 @@ export function ProfileView({
   onUpdatePhoto,
   onUpdatePlan,
 }: ProfileViewProps) {
+  const [isEditingOpen, setIsEditingOpen] = useState(false)
   const profilePhotos = photos.filter((photo) => photo.showOnProfile && (!photo.userId || photo.userId === userProfile.userId))
   const profilePlans = plans.filter((plan) => plan.showOnProfile && (!plan.userId || plan.userId === userProfile.userId))
-  const coverPhoto = photos.find((photo) => photo.id === albumProfile.coverPhotoId) ?? profilePhotos[0] ?? photos[0]
-  const coverImage = albumProfile.coverImage || coverPhoto?.image
+  const highlightedCount = profilePhotos.length + profilePlans.length
 
   const handleToggleProfilePhoto = (photo: Photo) => {
     onUpdatePhoto(photo.id, {
@@ -68,33 +68,60 @@ export function ProfileView({
 
   return (
     <section className="mx-auto mt-8 grid max-w-7xl gap-8">
-      <section
-        className={`${styles.heroPanel} overflow-hidden rounded-[2rem] p-6 md:p-10`}
-        style={{ '--profile-accent': albumProfile.accentColor } as CSSProperties}
-      >
-        <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
-          <div className={`${styles.profilePortrait} rounded-[2rem] p-4`}>
-            {coverImage ? (
-              <img className="h-80 w-full rounded-[1.5rem] object-cover" src={coverImage} alt={coverPhoto?.description ?? albumProfile.title} />
+      <section className={`${styles.heroPanel} ${styles.personalProfileHero} overflow-hidden rounded-[2rem] p-6 md:p-10`}>
+        <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+            {userProfile.avatarUrl ? (
+              <img className="h-32 w-32 rounded-[2rem] object-cover shadow-lg" src={userProfile.avatarUrl} alt={userProfile.displayName} />
             ) : (
-              <div className={`${styles.softCard} grid h-80 place-items-center rounded-[1.5rem] text-center`}>
-                <p className={styles.muted}>Elige una foto de portada cuando tengas recuerdos cargados.</p>
+              <div className={`${styles.profileAvatarFallback} grid h-32 w-32 place-items-center rounded-[2rem] text-5xl`} aria-hidden="true">
+                ♡
               </div>
             )}
+            <div>
+              <p className={`${styles.eyebrow} text-sm uppercase tracking-[0.35em]`}>Mi perfil</p>
+              <h1 className={`${styles.titleFont} ${styles.heading} mt-3 text-4xl leading-tight md:text-6xl`}>{userProfile.displayName || 'Tu presentación'}</h1>
+              <p className={`${styles.muted} mt-3 max-w-2xl text-lg`}>
+                {userProfile.bio || 'Agrega una biografía para contar cómo quieres aparecer dentro del álbum.'}
+              </p>
+              <p className={`${styles.muted} mt-2 text-sm`}>{userEmail}</p>
+            </div>
           </div>
-          <div>
-            <p className={`${styles.eyebrow} text-sm uppercase tracking-[0.35em]`}>Portada compartida</p>
-            <h1 className={`${styles.titleFont} ${styles.heading} mt-3 text-5xl leading-none md:text-7xl`}>{albumProfile.title}</h1>
-            <p className={`${styles.muted} mt-5 max-w-2xl text-lg`}>
-              {albumProfile.description || 'El espacio que resume quiénes son como pareja y qué recuerdos quieren destacar.'}
-            </p>
+
+          <div className="flex flex-wrap gap-3 md:justify-end">
+            <span className={`${styles.profileStat} rounded-full px-4 py-2 text-sm font-semibold`}>{profilePhotos.length} fotos tuyas</span>
+            <span className={`${styles.profileStat} rounded-full px-4 py-2 text-sm font-semibold`}>{profilePlans.length} citas tuyas</span>
+            <span className={`${styles.profileStat} rounded-full px-4 py-2 text-sm font-semibold`}>{highlightedCount} recuerdos visibles</span>
           </div>
         </div>
       </section>
 
-      <div className="grid gap-8 lg:grid-cols-2">
-        <form className={`${styles.panel} rounded-[2rem] p-6`} onSubmit={onSaveUserProfile}>
-          <p className={`${styles.eyebrow} text-sm uppercase tracking-[0.25em]`}>Mi presentación</p>
+      <section className={`${styles.profileEditIntro} rounded-[2rem] p-5`}>
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className={`${styles.eyebrow} text-sm font-semibold uppercase tracking-[0.25em]`}>Editar perfil</p>
+            <h2 className={`${styles.titleFont} ${styles.heading} mt-2 text-3xl`}>Ajusta cómo se ve su espacio compartido</h2>
+            <p className={`${styles.muted} mt-2 max-w-3xl text-sm`}>
+              Tu perfil muestra cómo apareces dentro del álbum. Abre la edición para cambiar tus datos, ajustar la portada compartida o elegir recuerdos destacados.
+            </p>
+          </div>
+          <button
+            className={`${isEditingOpen ? styles.buttonGhost : styles.buttonPrimary} px-6 py-3 font-semibold`}
+            type="button"
+            aria-expanded={isEditingOpen}
+            aria-controls="profile-editor"
+            onClick={() => setIsEditingOpen((isOpen) => !isOpen)}
+          >
+            {isEditingOpen ? 'Cerrar edición' : 'Editar perfil'}
+          </button>
+        </div>
+      </section>
+
+      {isEditingOpen && (
+        <div className="grid gap-8" id="profile-editor">
+          <div className="grid gap-8 lg:grid-cols-2">
+            <form className={`${styles.panel} rounded-[2rem] p-6`} onSubmit={onSaveUserProfile}>
+          <p className={`${styles.eyebrow} text-sm uppercase tracking-[0.25em]`}>1. Mi presentación</p>
           <h2 className={`${styles.titleFont} ${styles.heading} mt-2 text-3xl`}>Cómo apareces en el álbum</h2>
           <p className={`${styles.muted} mt-2 text-sm`}>{userEmail}</p>
           {userProfile.avatarUrl && (
@@ -121,10 +148,12 @@ export function ProfileView({
             </label>
             <label className={`${styles.labelText} block text-sm font-semibold`}>
               Subir foto de perfil
+              <span className={`${styles.muted} mt-1 block text-xs font-normal`}>Si subes una imagen, reemplaza la URL de avatar anterior.</span>
               <input className={`${styles.input} mt-2`} type="file" accept="image/*" onChange={onUserProfileImageUpload} />
             </label>
             <label className={`${styles.labelText} block text-sm font-semibold`}>
               Avatar por URL opcional
+              <span className={`${styles.muted} mt-1 block text-xs font-normal`}>Úsalo sólo si ya tienes una imagen alojada en otro sitio.</span>
               <input
                 className={`${styles.input} mt-2`}
                 placeholder="https://..."
@@ -139,18 +168,18 @@ export function ProfileView({
                 value={userProfile.themeMode}
                 onChange={(event) => onUserProfileChange({ ...userProfile, themeMode: event.target.value as ThemeMode })}
               >
-                <option value="light">Light</option>
-                <option value="dark">Dark</option>
+                <option value="light">Claro</option>
+                <option value="dark">Oscuro</option>
               </select>
             </label>
             <button className={`${styles.buttonPrimary} px-6 py-3 font-semibold`} type="submit">
               Guardar mi perfil
             </button>
           </div>
-        </form>
+            </form>
 
-        <form className={`${styles.panel} rounded-[2rem] p-6`} onSubmit={onSaveAlbumProfile}>
-          <p className={`${styles.eyebrow} text-sm uppercase tracking-[0.25em]`}>Portada del álbum</p>
+            <form className={`${styles.panel} rounded-[2rem] p-6`} onSubmit={onSaveAlbumProfile}>
+          <p className={`${styles.eyebrow} text-sm uppercase tracking-[0.25em]`}>2. Portada del álbum</p>
           <h2 className={`${styles.titleFont} ${styles.heading} mt-2 text-3xl`}>Su portada compartida</h2>
 
           <div className="mt-6 grid gap-4">
@@ -173,10 +202,12 @@ export function ProfileView({
             </label>
             <label className={`${styles.labelText} block text-sm font-semibold`}>
               Subir portada del álbum
+              <span className={`${styles.muted} mt-1 block text-xs font-normal`}>La imagen subida tiene prioridad sobre la foto automática seleccionada abajo.</span>
               <input className={`${styles.input} mt-2`} type="file" accept="image/*" onChange={onAlbumProfileImageUpload} />
             </label>
             <label className={`${styles.labelText} block text-sm font-semibold`}>
               Foto de portada
+              <span className={`${styles.muted} mt-1 block text-xs font-normal`}>Puedes elegir una foto del álbum si prefieres no subir una portada manual.</span>
               <select
                 className={`${styles.input} mt-2`}
                 value={albumProfile.coverPhotoId}
@@ -203,11 +234,11 @@ export function ProfileView({
               Guardar perfil del álbum
             </button>
           </div>
-        </form>
-      </div>
+            </form>
+          </div>
 
-      <section className={`${styles.panel} rounded-[2rem] p-6`}>
-        <p className={`${styles.eyebrow} text-sm uppercase tracking-[0.25em]`}>Recuerdos destacados</p>
+          <section className={`${styles.panel} rounded-[2rem] p-6`}>
+        <p className={`${styles.eyebrow} text-sm uppercase tracking-[0.25em]`}>3. Recuerdos destacados</p>
         <h2 className={`${styles.titleFont} ${styles.heading} mt-2 text-3xl`}>Elige qué aparece en la portada</h2>
         <p className={`${styles.muted} mt-2 max-w-2xl text-sm`}>
           Activa o desactiva fotos y citas para mostrarlas como recuerdos destacados del álbum compartido.
@@ -218,7 +249,7 @@ export function ProfileView({
             <div className="mt-4 grid gap-3">
               {photos.length > 0 ? (
                 photos.map((photo) => (
-                  <label className={`${styles.profileSelectorItem} rounded-2xl p-3`} key={photo.id}>
+                  <label className={`${styles.profileSelectorItem} ${photo.showOnProfile ? styles.profileSelectorItemSelected : ''} rounded-2xl p-3`} key={photo.id}>
                     <input
                       className="h-5 w-5 accent-[var(--rose)]"
                       type="checkbox"
@@ -229,6 +260,7 @@ export function ProfileView({
                     <span>
                       <strong className={styles.heading}>{photo.place}</strong>
                       <small className={`${styles.muted} block`}>{photo.caption || photo.description}</small>
+                      {photo.showOnProfile && <small className={`${styles.selectedBadge} mt-2 inline-flex rounded-full px-3 py-1 text-xs font-bold`}>Destacada</small>}
                     </span>
                   </label>
                 ))
@@ -242,7 +274,7 @@ export function ProfileView({
             <div className="mt-4 grid gap-3">
               {plans.length > 0 ? (
                 plans.map((plan) => (
-                  <label className={`${styles.profileSelectorItem} rounded-2xl p-3`} key={plan.id}>
+                  <label className={`${styles.profileSelectorItem} ${styles.profileSelectorItemPlan} ${plan.showOnProfile ? styles.profileSelectorItemSelected : ''} rounded-2xl p-3`} key={plan.id}>
                     <input
                       className="h-5 w-5 accent-[var(--rose)]"
                       type="checkbox"
@@ -252,6 +284,7 @@ export function ProfileView({
                     <span>
                       <strong className={styles.heading}>{plan.place}</strong>
                       <small className={`${styles.muted} block`}>{formatDisplayDate(plan.date)} · {plan.description}</small>
+                      {plan.showOnProfile && <small className={`${styles.selectedBadge} mt-2 inline-flex rounded-full px-3 py-1 text-xs font-bold`}>Destacada</small>}
                     </span>
                   </label>
                 ))
@@ -292,7 +325,9 @@ export function ProfileView({
             )}
           </div>
         </div>
-      </section>
+          </section>
+        </div>
+      )}
     </section>
   )
 }

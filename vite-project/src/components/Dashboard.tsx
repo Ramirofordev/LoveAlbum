@@ -1,9 +1,10 @@
 import styles from '../App.module.css'
 import type { CSSProperties } from 'react'
-import type { DatePlan, Photo } from '../types'
+import type { AlbumProfile, DatePlan, Photo } from '../types'
 import { formatDisplayDate } from '../utils'
 
 type DashboardProps = {
+  albumProfile: AlbumProfile
   photos: Photo[]
   plans: DatePlan[]
   favoritePhotos: Photo[]
@@ -11,10 +12,16 @@ type DashboardProps = {
   upcomingPendingPlans: DatePlan[]
   onOpenAlbum: () => void
   onOpenPlans: () => void
+  onOpenProfile: () => void
 }
 
-export function Dashboard({ photos, plans, favoritePhotos, favoritePlans, upcomingPendingPlans, onOpenAlbum, onOpenPlans }: DashboardProps) {
+export function Dashboard({ albumProfile, photos, plans, favoritePhotos, favoritePlans, upcomingPendingPlans, onOpenAlbum, onOpenPlans, onOpenProfile }: DashboardProps) {
   const collagePhotos = favoritePhotos.length > 0 ? favoritePhotos.slice(0, 5) : photos.slice(0, 5)
+  const highlightedPhotos = photos.filter((photo) => photo.showOnProfile)
+  const highlightedPlans = plans.filter((plan) => plan.showOnProfile)
+  const coverPhoto = photos.find((photo) => photo.id === albumProfile.coverPhotoId) ?? highlightedPhotos[0] ?? photos[0]
+  const coverImage = albumProfile.coverImage || coverPhoto?.image
+  const highlightedCount = highlightedPhotos.length + highlightedPlans.length
 
   return (
     <>
@@ -47,6 +54,9 @@ export function Dashboard({ photos, plans, favoritePhotos, favoritePlans, upcomi
               <button className={`${styles.buttonGhost} px-6 py-3 font-semibold`} type="button" onClick={onOpenPlans}>
                 Planear una cita
               </button>
+              <button className={`${styles.buttonGhost} px-6 py-3 font-semibold`} type="button" onClick={onOpenProfile}>
+                Ver perfil del álbum
+              </button>
             </div>
           </div>
 
@@ -60,6 +70,39 @@ export function Dashboard({ photos, plans, favoritePhotos, favoritePlans, upcomi
             <div className={`${styles.softCard} rounded-3xl p-4`}>
               <strong className="block text-3xl">♡</strong> privado
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        className={`${styles.heroPanel} ${styles.profileHero} mx-auto mt-8 max-w-7xl overflow-hidden rounded-[2rem] p-6 md:p-10`}
+        style={{ '--profile-accent': albumProfile.accentColor } as CSSProperties}
+      >
+        <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
+          <div className={`${styles.profilePortrait} relative rounded-[2rem] p-4`}>
+            <span className={`${styles.coverBadge} rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.22em]`}>Portada</span>
+            {coverImage ? (
+              <img className="h-80 w-full rounded-[1.5rem] object-cover" src={coverImage} alt={coverPhoto?.description ?? albumProfile.title} />
+            ) : (
+              <div className={`${styles.softCard} grid h-80 place-items-center rounded-[1.5rem] text-center`}>
+                <p className={styles.muted}>Elige una foto de portada desde Perfil cuando tengas recuerdos cargados.</p>
+              </div>
+            )}
+          </div>
+          <div>
+            <p className={`${styles.eyebrow} text-sm uppercase tracking-[0.35em]`}>Portada compartida</p>
+            <h2 className={`${styles.titleFont} ${styles.heading} mt-3 text-4xl leading-tight md:text-7xl md:leading-none`}>{albumProfile.title}</h2>
+            <p className={`${styles.muted} mt-5 max-w-2xl text-lg`}>
+              {albumProfile.description || 'El espacio que resume quiénes son como pareja y qué recuerdos quieren destacar.'}
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <span className={`${styles.profileStat} rounded-full px-4 py-2 text-sm font-semibold`}>{highlightedPhotos.length} fotos destacadas</span>
+              <span className={`${styles.profileStat} rounded-full px-4 py-2 text-sm font-semibold`}>{highlightedPlans.length} citas destacadas</span>
+              <span className={`${styles.profileStat} rounded-full px-4 py-2 text-sm font-semibold`}>{highlightedCount} recuerdos visibles</span>
+            </div>
+            <button className={`${styles.buttonPrimary} mt-6 px-6 py-3 font-semibold`} type="button" onClick={onOpenProfile}>
+              Editar portada y perfil
+            </button>
           </div>
         </div>
       </section>

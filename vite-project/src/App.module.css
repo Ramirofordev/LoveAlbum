@@ -31,6 +31,13 @@
   box-shadow: 0 18px 38px rgba(124, 41, 64, 0.34);
 }
 
+.buttonPrimary:focus-visible,
+.buttonGhost:focus-visible,
+.profileSelectorItem:focus-within {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
 .buttonPrimary:disabled {
   cursor: not-allowed;
   opacity: 0.65;
@@ -312,11 +319,62 @@
 }
 
 .profilePortrait {
+  position: relative;
   border: 1px solid color-mix(in srgb, var(--profile-accent, var(--rose)) 42%, transparent);
   background:
     radial-gradient(circle at 20% 12%, color-mix(in srgb, var(--profile-accent, var(--rose)) 28%, transparent), transparent 16rem),
     var(--panel-soft);
   box-shadow: 0 22px 48px color-mix(in srgb, var(--profile-accent, var(--rose)) 18%, transparent);
+}
+
+.profilePortrait::after {
+  position: absolute;
+  inset: 1rem;
+  pointer-events: none;
+  content: '';
+  border-radius: 1.5rem;
+  background: linear-gradient(180deg, rgba(40, 18, 28, 0.02), rgba(40, 18, 28, 0.18));
+}
+
+.profileHero {
+  position: relative;
+  background:
+    radial-gradient(circle at 85% 12%, color-mix(in srgb, var(--profile-accent, var(--rose)) 18%, transparent), transparent 16rem),
+    linear-gradient(135deg, color-mix(in srgb, var(--panel) 92%, transparent), color-mix(in srgb, var(--panel-soft) 96%, transparent));
+}
+
+.profileEditIntro {
+  border: 1px solid var(--line);
+  background: linear-gradient(135deg, var(--panel-softer), color-mix(in srgb, var(--paper) 58%, transparent));
+}
+
+.personalProfileHero {
+  background:
+    radial-gradient(circle at 12% 16%, color-mix(in srgb, var(--rose) 16%, transparent), transparent 15rem),
+    linear-gradient(135deg, color-mix(in srgb, var(--panel) 94%, transparent), color-mix(in srgb, var(--panel-soft) 92%, transparent));
+}
+
+.profileAvatarFallback {
+  border: 1px solid color-mix(in srgb, var(--rose) 34%, transparent);
+  background: color-mix(in srgb, var(--rose) 10%, var(--paper));
+  color: var(--rose);
+  box-shadow: 0 18px 38px rgba(124, 41, 64, 0.14);
+}
+
+.coverBadge {
+  position: absolute;
+  top: 1.75rem;
+  left: 1.75rem;
+  z-index: 1;
+  background: color-mix(in srgb, var(--paper) 86%, transparent);
+  color: var(--rose-dark);
+  box-shadow: 0 12px 26px rgba(82, 42, 55, 0.14);
+}
+
+.profileStat {
+  border: 1px solid color-mix(in srgb, var(--profile-accent, var(--rose)) 28%, var(--line));
+  background: color-mix(in srgb, var(--profile-accent, var(--rose)) 9%, var(--panel-softer));
+  color: var(--rose-dark);
 }
 
 .collageHero {
@@ -393,6 +451,27 @@
   transform: translateY(-1px);
   border-color: var(--line);
   background: var(--paper);
+}
+
+.profileSelectorItemSelected {
+  border-color: color-mix(in srgb, var(--rose) 72%, var(--line));
+  background: color-mix(in srgb, var(--rose) 10%, var(--paper));
+  box-shadow: 0 14px 28px rgba(124, 41, 64, 0.1);
+}
+
+.profileSelectorItemPlan {
+  grid-template-columns: auto 1fr;
+}
+
+.selectedBadge {
+  background: color-mix(in srgb, var(--rose) 14%, var(--paper));
+  color: var(--rose-dark);
+}
+
+[data-theme='dark'] .coverBadge,
+[data-theme='dark'] .profileStat,
+[data-theme='dark'] .selectedBadge {
+  color: var(--ink);
 }
 
 .texture::before {
