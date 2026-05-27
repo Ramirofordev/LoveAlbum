@@ -15,6 +15,9 @@ type SettingsViewProps = {
   accountMessage: string
   accountError: string
   isAccountActionLoading: boolean
+  googleAccountEmail: string
+  isGoogleConnected: boolean
+  canDisconnectGoogle: boolean
   onUserProfileChange: (profile: UserProfile) => void
   onAlbumProfileChange: (profile: AlbumProfile) => void
   onSaveUserProfile: (event: FormEvent<HTMLFormElement>) => void
@@ -26,6 +29,7 @@ type SettingsViewProps = {
   onChangePassword: (event: FormEvent<HTMLFormElement>) => void
   onChangeEmail: (event: FormEvent<HTMLFormElement>) => void
   onLinkGoogle: () => void
+  onUnlinkGoogle: () => void
   onDeleteAccount: (event: FormEvent<HTMLFormElement>) => void
   onLogout: () => void
 }
@@ -50,6 +54,9 @@ export function SettingsView(props: SettingsViewProps) {
     accountMessage,
     accountError,
     isAccountActionLoading,
+    googleAccountEmail,
+    isGoogleConnected,
+    canDisconnectGoogle,
     onUserProfileChange,
     onAlbumProfileChange,
     onSaveUserProfile,
@@ -61,6 +68,7 @@ export function SettingsView(props: SettingsViewProps) {
     onChangePassword,
     onChangeEmail,
     onLinkGoogle,
+    onUnlinkGoogle,
     onDeleteAccount,
     onLogout,
   } = props
@@ -169,7 +177,35 @@ export function SettingsView(props: SettingsViewProps) {
             </div>
           )}
 
-          {activeSection === 'google' && <section className={`${styles.panel} rounded-[2rem] p-6`}><p className={`${styles.eyebrow} text-sm uppercase tracking-[0.25em]`}>Cuenta de Google</p><h2 className={`${styles.titleFont} ${styles.heading} mt-2 text-3xl`}>Conectar Google</h2><p className={`${styles.muted} mt-2 text-sm`}>Agrega Google como método de acceso sin perder tu perfil actual.</p><button className={`${styles.buttonGhost} mt-5 px-6 py-3 font-semibold`} type="button" onClick={onLinkGoogle} disabled={isAccountActionLoading}>Conectar Google</button></section>}
+          {activeSection === 'google' && (
+            <section className={`${styles.panel} rounded-[2rem] p-6`}>
+              <p className={`${styles.eyebrow} text-sm uppercase tracking-[0.25em]`}>Cuenta de Google</p>
+              <h2 className={`${styles.titleFont} ${styles.heading} mt-2 text-3xl`}>{isGoogleConnected ? 'Google conectado' : 'Conectar Google'}</h2>
+              <p className={`${styles.muted} mt-2 text-sm`}>Agrega Google como método de acceso sin perder tu perfil actual.</p>
+
+              {isGoogleConnected ? (
+                <div className="mt-6 grid gap-4">
+                  <div className={`${styles.softCard} rounded-3xl p-5`}>
+                    <p className={`${styles.eyebrow} text-xs uppercase tracking-[0.25em]`}>Cuenta vinculada</p>
+                    <p className={`${styles.heading} mt-2 text-lg font-bold`}>{googleAccountEmail || 'Cuenta Google vinculada'}</p>
+                    <p className={`${styles.muted} mt-2 text-sm`}>Puedes usar esta cuenta de Google para acceder al álbum.</p>
+                  </div>
+                  {!canDisconnectGoogle && (
+                    <p className={`${styles.emptyStateCompact} rounded-2xl p-4 text-sm`}>
+                      Google parece ser tu único método de acceso. Configura otro método antes de desconectarlo para no perder acceso a tu cuenta.
+                    </p>
+                  )}
+                  <button className={`${styles.buttonGhost} px-6 py-3 font-semibold`} type="button" onClick={onUnlinkGoogle} disabled={isAccountActionLoading || !canDisconnectGoogle}>
+                    Desconectar Google
+                  </button>
+                </div>
+              ) : (
+                <button className={`${styles.buttonGhost} mt-5 px-6 py-3 font-semibold`} type="button" onClick={onLinkGoogle} disabled={isAccountActionLoading}>
+                  Conectar Google
+                </button>
+              )}
+            </section>
+          )}
 
           {activeSection === 'destacados' && (
             <section className={`${styles.panel} rounded-[2rem] p-6`}>

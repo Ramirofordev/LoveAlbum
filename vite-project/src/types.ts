@@ -41,6 +41,14 @@ export type UserProfile = {
   themeMode: ThemeMode
 }
 
+export type AlbumMemberProfile = {
+  userId: string
+  displayName: string
+  bio: string
+  avatarUrl: string
+  isCurrentUser: boolean
+}
+
 export type AlbumProfile = {
   albumId: string
   title: string

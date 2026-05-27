@@ -1,11 +1,12 @@
 import styles from '../App.module.css'
-import type { DatePlan, Photo, UserProfile } from '../types'
+import type { AlbumMemberProfile, DatePlan, Photo, UserProfile } from '../types'
 
 type ProfileViewProps = {
   userEmail: string
   userProfile: UserProfile
   photos: Photo[]
   plans: DatePlan[]
+  albumMembers: AlbumMemberProfile[]
   onOpenSettings: () => void
 }
 
@@ -14,11 +15,13 @@ export function ProfileView({
   userProfile,
   photos,
   plans,
+  albumMembers,
   onOpenSettings,
 }: ProfileViewProps) {
   const profilePhotos = photos.filter((photo) => photo.showOnProfile && (!photo.userId || photo.userId === userProfile.userId))
   const profilePlans = plans.filter((plan) => plan.showOnProfile && (!plan.userId || plan.userId === userProfile.userId))
   const highlightedCount = profilePhotos.length + profilePlans.length
+  const sharedMembers = albumMembers.filter((member) => !member.isCurrentUser)
 
   return (
     <section className="mx-auto mt-8 grid max-w-7xl gap-8">
@@ -48,6 +51,35 @@ export function ProfileView({
             <span className={`${styles.profileStat} rounded-full px-4 py-2 text-sm font-semibold`}>{highlightedCount} recuerdos visibles</span>
           </div>
         </div>
+      </section>
+
+      <section className={`${styles.panel} rounded-[2rem] p-6`}>
+        <p className={`${styles.eyebrow} text-sm font-semibold uppercase tracking-[0.25em]`}>Álbum compartido</p>
+        <h2 className={`${styles.titleFont} ${styles.heading} mt-2 text-3xl`}>Compartes este álbum con</h2>
+        {sharedMembers.length > 0 ? (
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            {sharedMembers.map((member) => (
+              <article className={`${styles.softCard} flex items-center gap-4 rounded-3xl p-4`} key={member.userId}>
+                {member.avatarUrl ? (
+                  <img className="h-16 w-16 rounded-2xl object-cover" src={member.avatarUrl} alt={member.displayName} />
+                ) : (
+                  <div className={`${styles.profileAvatarFallback} grid h-16 w-16 place-items-center rounded-2xl text-2xl`} aria-hidden="true">
+                    ♡
+                  </div>
+                )}
+                <div>
+                  <h3 className={`${styles.heading} text-lg font-bold`}>{member.displayName}</h3>
+                  <p className={`${styles.muted} mt-1 text-sm`}>{member.bio || 'También forma parte de este álbum.'}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className={`${styles.emptyStateCompact} mt-5 rounded-3xl p-5`}>
+            <p className={`${styles.heading} font-semibold`}>Todavía no hay otra persona unida a este álbum.</p>
+            <p className={`${styles.muted} mt-2 text-sm`}>Comparte el código de invitación para que tu pareja pueda sumarse.</p>
+          </div>
+        )}
       </section>
 
       <section className={`${styles.profileEditIntro} rounded-[2rem] p-5`}>

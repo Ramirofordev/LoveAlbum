@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase'
-import type { AlbumProfile, DatePlan, LoveAlbum, Photo, PhotoFormState, PlanFormState, StickerPosition, StickerSize, ThemeMode, UserProfile } from '../types'
+import type { AlbumMemberProfile, AlbumProfile, DatePlan, LoveAlbum, Photo, PhotoFormState, PlanFormState, StickerPosition, StickerSize, ThemeMode, UserProfile } from '../types'
 import { createId, normalizeSafeUrl } from '../utils'
 
 type LoveAlbumRow = {
@@ -53,6 +53,10 @@ type AlbumProfileRow = {
   accent_color: string
   cover_photo_id: string | null
   cover_image_path: string
+}
+
+type AlbumMemberRow = {
+  user_id: string
 }
 
 const signedUrlTtlInSeconds = 60 * 60
@@ -112,6 +116,49 @@ export async function fetchPlans(albumId: string): Promise<DatePlan[]> {
   if (error) throw error
 
   return (data ?? []).map(mapPlanRow)
+}
+
+export async function fetchAlbumMembers(albumId: string, currentUserId: string): Promise<AlbumMemberProfile[]> {
+  if (!supabase) return []
+
+  const { data: memberRows, error: membersError } = await supabase
+    .from('love_album_members')
+    .select('user_id')
+    .eq('album_id', albumId)
+
+  if (membersError) throw membersError
+
+  const members = (memberRows ?? []) as AlbumMemberRow[]
+  const memberIds = members.map((member) => member.user_id)
+  if (memberIds.length === 0) return []
+
+  const { data: profileRows, error: profilesError } = await supabase
+    .from('love_user_profiles')
+    .select('user_id, display_name, bio, avatar_url, avatar_path, theme_mode')
+    .in('user_id', memberIds)
+
+  if (profilesError) throw profilesError
+
+  const profilesByUserId = new Map(
+    await Promise.all(
+      ((profileRows ?? []) as UserProfileRow[]).map(async (profileRow) => {
+        const profile = await mapUserProfileRow(profileRow)
+        return [profile.userId, profile] as const
+      }),
+    ),
+  )
+
+  return members.map((member) => {
+    const profile = profilesByUserId.get(member.user_id)
+
+    return {
+      userId: member.user_id,
+      displayName: profile?.displayName || (member.user_id === currentUserId ? 'Tú' : 'Integrante del álbum'),
+      bio: profile?.bio ?? '',
+      avatarUrl: profile?.avatarUrl ?? '',
+      isCurrentUser: member.user_id === currentUserId,
+    }
+  })
 }
 
 export async function createPhoto(albumId: string, photoFile: File, stickerFile: File | null, form: PhotoFormState): Promise<Photo> {

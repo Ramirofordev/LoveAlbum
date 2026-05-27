@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
-import type { User } from '@supabase/supabase-js'
+import type { User, UserIdentity } from '@supabase/supabase-js'
 import styles from './App.module.css'
 import { AlbumGate } from './components/AlbumGate'
 import { AlbumView } from './components/AlbumView'
@@ -20,6 +20,7 @@ import {
   deletePlan,
   fetchAlbums,
   fetchAlbumProfile,
+  fetchAlbumMembers,
   fetchPhotos,
   fetchPlans,
   fetchUserProfile,
@@ -31,7 +32,7 @@ import {
   updatePhoto,
   updatePlan,
 } from './services/loveAlbumService'
-import type { ActiveView, AlbumProfile, DatePlan, DatePlanStatus, LoveAlbum, Photo, PhotoFilter, PhotoFormState, PlanFilter, PlanFormState, ThemeMode, UserProfile } from './types'
+import type { ActiveView, AlbumMemberProfile, AlbumProfile, DatePlan, DatePlanStatus, LoveAlbum, Photo, PhotoFilter, PhotoFormState, PlanFilter, PlanFormState, ThemeMode, UserProfile } from './types'
 import {
   createId,
   maxPhotoSizeInBytes,
@@ -103,6 +104,15 @@ const getAuthErrorMessage = (message: string) => {
 
 const getFormValue = (formData: FormData, key: string) => String(formData.get(key) ?? '').trim()
 
+type AuthIdentityMetadata = {
+  email?: string
+  full_name?: string
+  name?: string
+  avatar_url?: string
+}
+
+const getIdentityMetadata = (identity: UserIdentity) => (identity.identity_data ?? {}) as AuthIdentityMetadata
+
 function App() {
   const [user, setUser] = useState<User | null>(null)
   const [isAuthLoading, setIsAuthLoading] = useState(Boolean(supabase))
@@ -118,6 +128,7 @@ function App() {
   const [currentAlbum, setCurrentAlbum] = useState<LoveAlbum | null>(null)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [albumProfile, setAlbumProfile] = useState<AlbumProfile | null>(null)
+  const [albumMembers, setAlbumMembers] = useState<AlbumMemberProfile[]>([])
   const [albumName, setAlbumName] = useState('')
   const [inviteCode, setInviteCode] = useState('')
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => readStoredTheme('light'))
@@ -208,12 +219,14 @@ function App() {
       fetchPlans(currentAlbum.id),
       fetchUserProfile(user.id, user.email ?? undefined),
       fetchAlbumProfile(currentAlbum),
+      fetchAlbumMembers(currentAlbum.id, user.id),
     ])
-      .then(([remotePhotos, remotePlans, remoteUserProfile, remoteAlbumProfile]) => {
+      .then(([remotePhotos, remotePlans, remoteUserProfile, remoteAlbumProfile, remoteAlbumMembers]) => {
         setPhotos(remotePhotos)
         setPlans(remotePlans)
         setUserProfile(remoteUserProfile)
         setAlbumProfile(remoteAlbumProfile)
+        setAlbumMembers(remoteAlbumMembers)
         setThemeMode(remoteUserProfile.themeMode)
         setDataError('')
       })
@@ -255,6 +268,10 @@ function App() {
     () => (planFilter === 'todas' ? plans : plans.filter((plan) => plan.status === planFilter)),
     [planFilter, plans],
   )
+
+  const googleIdentity = useMemo(() => user?.identities?.find((identity) => identity.provider === 'google') ?? null, [user])
+  const googleAccountEmail = googleIdentity ? getIdentityMetadata(googleIdentity).email ?? user?.email ?? '' : ''
+  const canDisconnectGoogle = Boolean(googleIdentity && user?.identities?.some((identity) => identity.id !== googleIdentity.id))
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -326,6 +343,7 @@ function App() {
       setAlbumName('')
       setPhotos([])
       setPlans([])
+      setAlbumMembers([])
     } catch (error) {
       setAlbumError(error instanceof Error ? error.message : 'No se pudo crear el álbum.')
     } finally {
@@ -348,6 +366,7 @@ function App() {
       setInviteCode('')
       setPhotos([])
       setPlans([])
+      setAlbumMembers([])
     } catch (error) {
       setAlbumError(error instanceof Error ? error.message : 'No se pudo unir al álbum.')
     } finally {
@@ -738,6 +757,36 @@ function App() {
     }
   }
 
+  const handleUnlinkGoogle = async () => {
+    if (!supabase || !googleIdentity) return
+
+    setIsAccountActionLoading(true)
+    setAccountError('')
+    setAccountMessage('')
+
+    try {
+      if (!canDisconnectGoogle) {
+        throw new Error('No puedes desconectar Google porque parece ser tu único método de acceso. Configura una contraseña o vincula otro método antes de desconectarlo.')
+      }
+
+      const accepted = window.confirm('Vas a desconectar Google de esta cuenta. Podrás seguir entrando con el otro método vinculado. ¿Quieres continuar?')
+      if (!accepted) return
+
+      const { error } = await supabase.auth.unlinkIdentity(googleIdentity)
+      if (error) throw error
+
+      const { data, error: userError } = await supabase.auth.getUser()
+      if (userError) throw userError
+
+      setUser(data.user ?? user)
+      setAccountMessage('Cuenta de Google desconectada correctamente.')
+    } catch (error) {
+      setAccountError(error instanceof Error ? error.message : 'No se pudo desconectar Google.')
+    } finally {
+      setIsAccountActionLoading(false)
+    }
+  }
+
   const handleDeleteAccount = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!supabase) return
@@ -813,6 +862,13 @@ function App() {
       try {
         const savedProfile = await saveUserProfile(userProfile)
         setUserProfile(savedProfile)
+        setAlbumMembers((currentMembers) =>
+          currentMembers.map((member) =>
+            member.userId === savedProfile.userId
+              ? { ...member, displayName: savedProfile.displayName, bio: savedProfile.bio, avatarUrl: savedProfile.avatarUrl }
+              : member,
+          ),
+        )
         setThemeMode(savedProfile.themeMode)
         setDataError('')
       } catch (error) {
@@ -844,6 +900,13 @@ function App() {
       const avatarPath = await uploadUserProfileImage(currentAlbum.id, userProfile.userId, file)
       const savedProfile = await saveUserProfile({ ...userProfile, avatarPath, avatarUrl: '' })
       setUserProfile(savedProfile)
+      setAlbumMembers((currentMembers) =>
+        currentMembers.map((member) =>
+          member.userId === savedProfile.userId
+            ? { ...member, displayName: savedProfile.displayName, bio: savedProfile.bio, avatarUrl: savedProfile.avatarUrl }
+            : member,
+        ),
+      )
       setDataError('')
     } catch (error) {
       setDataError(error instanceof Error ? error.message : 'No se pudo subir la foto de perfil.')
@@ -1058,6 +1121,7 @@ function App() {
               userProfile={userProfile}
               photos={photos}
               plans={plans}
+              albumMembers={albumMembers}
               onOpenSettings={() => handleSelectView('configuracion')}
             />
           )}
@@ -1072,6 +1136,9 @@ function App() {
               accountMessage={accountMessage}
               accountError={accountError}
               isAccountActionLoading={isAccountActionLoading}
+              googleAccountEmail={googleAccountEmail}
+              isGoogleConnected={Boolean(googleIdentity)}
+              canDisconnectGoogle={canDisconnectGoogle}
               onUserProfileChange={setUserProfile}
               onAlbumProfileChange={setAlbumProfile}
               onSaveUserProfile={handleSaveUserProfile}
@@ -1083,6 +1150,7 @@ function App() {
               onChangePassword={handleChangePassword}
               onChangeEmail={handleChangeEmail}
               onLinkGoogle={handleLinkGoogle}
+              onUnlinkGoogle={handleUnlinkGoogle}
               onDeleteAccount={handleDeleteAccount}
               onLogout={handleLogout}
             />
